@@ -1,0 +1,105 @@
+---
+// ============================================================
+//  Search — full results page (query + sort + pagination).
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ProductGrid from '~/components/product/ProductGrid.astro';
+import { searchProducts, SEARCH_SORT_OPTIONS, resolveSort } from '~/lib/shopify';
+import { paginationUrls } from '~/lib/pagination';
+import type { ProductCard } from '~/lib/shopify/types';
+
+const url = Astro.url;
+const query = (url.searchParams.get('q') ?? '').trim();
+const sortValue = url.searchParams.get('sort') ?? SEARCH_SORT_OPTIONS[0].value;
+const sort = resolveSort(SEARCH_SORT_OPTIONS, sortValue);
+const after = url.searchParams.get('after');
+const before = url.searchParams.get('before');
+
+let products: ProductCard[] = [];
+let total = 0;
+let prevUrl: string | null = null;
+let nextUrl: string | null = null;
+let loadError = false;
+
+if (query) {
+  try {
+    const res = await searchProducts({
+      query,
+      pageSize: 12,
+      after,
+      before,
+      sortKey: sort.sortKey,
+      reverse: sort.reverse,
+    });
+    products = res.items;
+    total = res.totalCount;
+    ({ prevUrl, nextUrl } = paginationUrls(url, res.pageInfo));
+  } catch (err) {
+    console.error('[search] failed:', (err as Error).message);
+    loadError = true;
+  }
+}
+---
+
+<BaseLayout title={query ? `Search · ${query}` : 'Search'} description="Search the Édition collection.">
+  <section class="shop">
+    <div class="wrap">
+      <div class="page-intro">
+        <span class="eyebrow">Search</span>
+        <h1>{query ? <>Results for <em>{query}</em></> : 'Search the collection'}</h1>
+        <form class="search-bar" method="get" action="/search" role="search">
+          <input type="search" name="q" value={query} placeholder="Search styles, fabrics, collections…" aria-label="Search" autofocus />
+          <button class="btn-primary" type="submit">Search</button>
+        </form>
+      </div>
+
+      {
+        query && (
+          <div class="shop-toolbar">
+            <span class="shop-count">{loadError ? 'Search unavailable' : `${total} ${total === 1 ? 'result' : 'results'}`}</span>
+            {!loadError && products.length > 0 && (
+              <form class="shop-sort" method="get" action="/search" data-sort-form>
+                <input type="hidden" name="q" value={query} />
+                <label for="srch-sort">Sort</label>
+                <select id="srch-sort" name="sort">
+                  {SEARCH_SORT_OPTIONS.map((o) => (
+                    <option value={o.value} selected={o.value === sort.value}>{o.label}</option>
+                  ))}
+                </select>
+              </form>
+            )}
+          </div>
+        )
+      }
+
+      {
+        query && !loadError && products.length === 0 && (
+          <div class="shop-empty">
+            <p class="se-title">No matches for "{query}"</p>
+            <p>Try a different term, or browse the full collection.</p>
+            <a class="btn-primary" href="/products">Browse all pieces</a>
+          </div>
+        )
+      }
+
+      {
+        products.length > 0 && (
+          <>
+            <ProductGrid products={products} />
+            {(prevUrl || nextUrl) && (
+              <nav class="shop-pager" aria-label="Pagination">
+                <a class="btn-line" href={prevUrl ?? '#'} aria-disabled={!prevUrl}>← Prev</a>
+                <a class="btn-line" href={nextUrl ?? '#'} aria-disabled={!nextUrl}>Next →</a>
+              </nav>
+            )}
+          </>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const form = document.querySelector('[data-sort-form]') as HTMLFormElement | null;
+  form?.querySelector('select')?.addEventListener('change', () => form.submit());
+</script>

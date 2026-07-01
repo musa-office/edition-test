@@ -1,0 +1,324 @@
+---
+// ============================================================
+//  PDP — product detail. Editorial gallery + buy box + details
+//  + recommendations.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ProductGallery from '~/components/react/ProductGallery.tsx';
+import VariantSelector from '~/components/react/VariantSelector.tsx';
+import ProductGrid from '~/components/product/ProductGrid.astro';
+import { getProduct, getProductRecommendations } from '~/lib/shopify';
+import { formatMoney } from '~/lib/utils';
+import type { Image, Product, ProductCard } from '~/lib/shopify/types';
+
+const { handle } = Astro.params;
+
+let product: Product | null = null;
+let recommendations: ProductCard[] = [];
+let loadFailed = false;
+
+try {
+  product = await getProduct(handle!);
+} catch (err) {
+  loadFailed = true;
+  console.error('[product] load failed:', (err as Error).message);
+}
+
+if (product) {
+  try {
+    recommendations = await getProductRecommendations(product.id, 4);
+  } catch (err) {
+    console.error('[product] recommendations failed:', (err as Error).message);
+  }
+}
+
+if (loadFailed) Astro.response.status = 503;
+else if (!product) Astro.response.status = 404;
+
+const images: Image[] =
+  product && product.images.length
+    ? product.images
+    : product?.featuredImage
+      ? [product.featuredImage]
+      : [];
+const currency = product?.priceRange.minVariantPrice.currencyCode ?? 'USD';
+const ogImage = product?.featuredImage?.url;
+
+const productLd = product
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.title,
+      description: product.description,
+      image: images.map((i) => i.url),
+      ...(product.vendor ? { brand: { '@type': 'Brand', name: product.vendor } } : {}),
+      offers: {
+        '@type': 'Offer',
+        price: product.priceRange.minVariantPrice.amount,
+        priceCurrency: currency,
+        availability: product.availableForSale
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+        url: new URL(Astro.url.pathname, Astro.url.origin).href,
+      },
+    }
+  : null;
+
+const TRUST = [
+  'Complimentary shipping over $250',
+  '30-day easy returns',
+  'Conscious, made-to-last craft',
+];
+
+// Editorial framing line for the header band (kept distinct from the H1).
+const bandTitle = product?.productType || product?.vendor || 'The SS26 Collection';
+
+// Payload for the client-side "recently viewed" list.
+const recentItem = product
+  ? {
+      handle: product.handle,
+      title: product.title,
+      image: product.featuredImage?.url ?? images[0]?.url ?? '',
+      price: formatMoney(product.priceRange.minVariantPrice.amount, currency),
+      vendor: product.vendor,
+    }
+  : null;
+---
+
+{
+  product ? (
+    <BaseLayout
+      title={product.seo?.title ?? product.title}
+      description={product.seo?.description ?? product.description}
+      image={ogImage}
+      jsonLd={productLd}
+    >
+      <section class="pdp-top">
+        <div class="wrap">
+          <div class="shop-header">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+              <a href="/">Home</a>
+              <span class="bc-sep">›</span>
+              <a href="/products">Shop</a>
+              <span class="bc-sep">›</span>
+              <span class="bc-current">{product.title}</span>
+            </nav>
+            <div class="shop-head-row">
+              <div class="shop-head">
+                <span class="shop-eyebrow"><span class="dot"></span>The SS26 Collection</span>
+                <p class="shop-band-title">{bandTitle}</p>
+                <p>Conscious tailoring designed to move with you — explore the piece, then complete the look.</p>
+              </div>
+              <ul class="shop-trust">
+                {TRUST.map((t) => (
+                  <li>
+                    <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pdp">
+        <div class="wrap">
+          <div class="pdp-grid">
+            <ProductGallery client:load images={images} title={product.title} />
+
+            <div class="pdp-info">
+              {product.vendor && <span class="pdp-cat">{product.vendor}</span>}
+              <h1 class="pdp-name">{product.title}</h1>
+
+              <div class="pdp-rating" aria-label="Rated 4.9 out of 5">
+                <span class="stars" aria-hidden="true">★★★★★</span>
+                <span class="rc">4.9 · 128 reviews</span>
+              </div>
+
+              <VariantSelector
+                client:load
+                options={product.options}
+                variants={product.variants}
+                currencyCode={currency}
+                handle={product.handle}
+                title={product.title}
+                image={product.featuredImage?.url}
+                vendor={product.vendor}
+              />
+
+              <ul class="pdp-trust">
+                {TRUST.slice(0, 2).map((t) => (
+                  <li>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+
+              <div class="pdp-acc">
+                {product.descriptionHtml && (
+                  <div class="acc-item open">
+                    <button class="acc-head" type="button">
+                      Details &amp; Materials
+                      <svg class="acc-chev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="acc-body"><div set:html={product.descriptionHtml} /></div>
+                  </div>
+                )}
+                <div class="acc-item">
+                  <button class="acc-head" type="button">
+                    Size &amp; Fit
+                    <svg class="acc-chev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="acc-body"><p>True to size with a relaxed, easy drape designed to layer. If you're between sizes or prefer an oversized look, we suggest sizing up.</p></div>
+                </div>
+                <div class="acc-item">
+                  <button class="acc-head" type="button">
+                    Shipping &amp; Returns
+                    <svg class="acc-chev" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="acc-body"><p>Complimentary carbon-neutral shipping on qualifying orders. Free returns within 30 days, in original condition with tags attached.</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {recommendations.length > 0 && (
+        <section class="section pdp-related">
+          <div class="wrap">
+            <div class="sec-head">
+              <div>
+                <span class="eyebrow">You may also like</span>
+                <h2 class="h-sec">Complete the look</h2>
+              </div>
+              <a class="link-arrow" href="/products">View all</a>
+            </div>
+            <ProductGrid products={recommendations} />
+          </div>
+        </section>
+      )}
+
+      {/* Recently viewed — populated client-side from localStorage. */}
+      <section class="section pdp-related recent-view" id="recentlyViewed" hidden>
+        <div class="wrap">
+          <div class="sec-head">
+            <div>
+              <span class="eyebrow">Recently Viewed</span>
+              <h2 class="h-sec">Pick up where you left off</h2>
+            </div>
+            <button class="link-arrow" type="button" data-recent-clear>Clear</button>
+          </div>
+          <div class="products" data-recent-grid></div>
+        </div>
+      </section>
+      <script type="application/json" id="pdp-current" is:inline set:html={JSON.stringify(recentItem)} />
+    </BaseLayout>
+  ) : (
+    <BaseLayout title={loadFailed ? 'Something went wrong' : 'Product not found'}>
+      <section class="pdp">
+        <div class="wrap shop-empty">
+          <p class="se-title">{loadFailed ? 'Something went wrong' : 'Product not found'}</p>
+          <p>{loadFailed ? "We couldn't load this product right now." : "We couldn't find that product."}</p>
+          <a class="btn-primary" href="/products">Shop all pieces</a>
+        </div>
+      </section>
+    </BaseLayout>
+  )
+}
+
+<script>
+  // PDP accordion. Without JS the panels stay open (progressive
+  // enhancement); the `.js` class enables the collapse behaviour and
+  // we animate via an explicit max-height so long copy never clips.
+  document.querySelectorAll('.pdp-acc').forEach((acc) => {
+    acc.classList.add('js');
+    acc.querySelectorAll('.acc-item').forEach((item) => {
+      const body = item.querySelector('.acc-body') as HTMLElement | null;
+      const head = item.querySelector('.acc-head');
+      const set = (open: boolean) => {
+        if (body) body.style.maxHeight = open ? `${body.scrollHeight}px` : '';
+      };
+      set(item.classList.contains('open'));
+      head?.addEventListener('click', () => set(item.classList.toggle('open')));
+    });
+  });
+</script>
+
+<script>
+  // Recently viewed: record this product, then render the others.
+  import { readRecent, pushRecent, clearRecent, type RecentItem } from '~/lib/recently-viewed';
+
+  const dataEl = document.getElementById('pdp-current');
+  const section = document.getElementById('recentlyViewed');
+  const grid = section?.querySelector('[data-recent-grid]');
+
+  if (dataEl && section && grid) {
+    let current: RecentItem | null = null;
+    try {
+      current = JSON.parse(dataEl.textContent || 'null');
+    } catch {
+      current = null;
+    }
+
+    const list = current ? pushRecent(current) : readRecent();
+    const others = list.filter((i) => !current || i.handle !== current.handle).slice(0, 4);
+
+    if (others.length) {
+      others.forEach((it) => grid.appendChild(buildCard(it)));
+      section.removeAttribute('hidden');
+    }
+
+    section.querySelector('[data-recent-clear]')?.addEventListener('click', () => {
+      clearRecent();
+      section.setAttribute('hidden', '');
+    });
+  }
+
+  function buildCard(it: RecentItem): HTMLElement {
+    const href = `/products/${it.handle}`;
+    const card = document.createElement('div');
+    card.className = 'product';
+
+    const media = document.createElement('div');
+    media.className = 'product-media';
+    if (it.image) {
+      const img = document.createElement('img');
+      img.src = it.image;
+      img.alt = it.title;
+      img.loading = 'lazy';
+      media.appendChild(img);
+    }
+    const overlay = document.createElement('a');
+    overlay.className = 'pm-link';
+    overlay.href = href;
+    overlay.setAttribute('aria-label', it.title);
+    media.appendChild(overlay);
+
+    const info = document.createElement('a');
+    info.className = 'product-info';
+    info.href = href;
+    const top = document.createElement('div');
+    if (it.vendor) {
+      const cat = document.createElement('span');
+      cat.className = 'product-cat';
+      cat.textContent = it.vendor;
+      top.appendChild(cat);
+    }
+    const title = document.createElement('h3');
+    title.className = 'product-title';
+    title.textContent = it.title;
+    top.appendChild(title);
+    const price = document.createElement('span');
+    price.className = 'price';
+    price.textContent = it.price;
+    info.appendChild(top);
+    info.appendChild(price);
+
+    card.appendChild(media);
+    card.appendChild(info);
+    return card;
+  }
+</script>

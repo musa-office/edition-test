@@ -1,0 +1,227 @@
+---
+// ============================================================
+//  About — editorial brand story. Follows Editorial Website/
+//  About.html: hero · story · philosophy · timeline · team ·
+//  testimonials · connect.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Testimonials from '~/components/home/Testimonials.astro';
+import { SITE } from '~/config/site';
+
+const VALUES = [
+  { no: '01', title: 'Intentional Craft', tag: 'Design & Making', body: 'Every garment begins with a question: does this need to exist? If yes — we make it slowly, with materials chosen for longevity over trend. Craft is not an aesthetic. It is a commitment.' },
+  { no: '02', title: 'Expressive Restraint', tag: 'Aesthetic Direction', body: 'We say more with less. Our collections are edited ruthlessly — a process that results in pieces that carry weight, presence, and meaning. Restraint is not minimalism. It is confidence.' },
+  { no: '03', title: 'Worn, Not Displayed', tag: 'Human & World', body: 'Fashion exists in motion — on bodies, in streets, in the world. We design for the life you actually live, in silhouettes that move and fabrics that improve with time. Clothing should be used, loved, and kept.' },
+];
+
+const TIMELINE = [
+  { year: '2014', tag: 'Origin', title: 'Founded in East London', body: 'Isabelle Fontaine launches Édition from a Hackney studio with a debut collection of 12 pieces. Sell-out in three weeks.' },
+  { year: '2016', tag: 'Expansion', title: 'First flagship store opens', body: 'Our Mayfair flagship opens its doors, designed as a living editorial space — part retail, part gallery.' },
+  { year: '2018', tag: 'Recognition', title: 'British Fashion Council Award', body: 'Named Emerging Brand of the Year. Vogue UK features Édition in their annual Best British Brands issue.' },
+  { year: '2020', tag: 'Craft', title: 'Paris atelier established', body: 'We open our Paris atelier in Le Marais, enabling hand-finishing on every tailored piece.' },
+  { year: '2022', tag: 'Sustainability', title: 'Certified carbon neutral', body: 'Full supply chain transparency achieved. 100% of fabrics sourced from certified ethical mills in Italy, Portugal, and Japan.' },
+  { year: '2024', tag: 'Present', title: 'A decade of Édition', body: 'Ten years. Six flagship stores. Forty-two seasonal collections. One unwavering belief: fashion is a form of expression.' },
+];
+
+const TEAM = [
+  {
+    img: '/images/Profile%2001.png', num: 'Profile 01 / 03', reverse: false,
+    role: 'Founder & Creative Director', name: 'Isabelle Fontaine', school: 'Central Saint Martins · London, UK',
+    bio: 'Previously head of design at Céline, Isabelle founded Édition in 2014 with a singular conviction — that fashion is a language, not a product. Her collections have been featured in Vogue Paris, i-D, and Harper’s Bazaar. Named BFC Emerging Talent of the Year in 2018.',
+    pull: 'Fashion should feel like something you discovered — not something you were sold.',
+    tags: ['Central Saint Martins', 'Former: Céline', 'BFC Award 2018', 'Founded Édition 2014'],
+  },
+  {
+    img: '/images/Profile%2002.png', num: 'Profile 02 / 03', reverse: true,
+    role: 'Head of Materials & Sustainability', name: 'James Alderton', school: 'Textile Engineering · Joined 2019',
+    bio: 'A textile engineer and supply chain specialist, James has spent 15 years building responsible sourcing programmes across Europe, Portugal, and Japan. At Édition he leads our full materials strategy — from fibre selection to end-of-life care — ensuring every piece is made to last.',
+    pull: 'The most sustainable garment is the one you never want to throw away.',
+    tags: ['Textile Engineering', 'Supply Chain Ethics', 'EU & Japan Mills'],
+  },
+  {
+    img: '/images/Profile%2003.png', num: 'Profile 03 / 03', reverse: false,
+    role: 'Senior Designer — Womenswear', name: 'Nadia Osei', school: 'Royal College of Art · Joined 2021',
+    bio: 'An RCA graduate renowned for her mastery of draped construction, Nadia defines Édition’s womenswear visual language season by season. Her silhouettes — precise yet fluid — are built on a deep understanding of how fabric behaves on a real body in real life.',
+    pull: 'Every collection is a conversation between the archive and the next century.',
+    tags: ['Royal College of Art', 'Drape & Construction', 'Womenswear'],
+  },
+];
+
+const CONNECT = [
+  { label: 'For Customers', title: 'Book a Styling Session', body: 'Our personal stylists offer complimentary 45-minute consultations — in store or virtually. Get curated recommendations for your wardrobe, occasion, or budget.', cta: 'Book Now', href: '/contact', icon: 'heart' },
+  { label: 'For Creatives', title: 'Collaborate with Us', body: 'We work with photographers, stylists, artists, and independent retailers who share our values. If you have a creative project, partnership idea, or stockist enquiry, we’d love to hear it.', cta: 'Start a Conversation', href: '/contact', icon: 'people' },
+  { label: 'For Press & Media', title: 'Press & Media Enquiries', body: 'Journalists, editors, and content creators — download our brand assets, request samples, or speak directly with our press team. We respond to all media enquiries within 24 hours.', cta: 'Contact Press Office', href: '/contact', icon: 'press' },
+  { label: 'For Talent', title: 'Join the Team', body: 'We’re always looking for exceptional people — designers, technologists, stylists, and storytellers. Browse our open roles or send us a speculative application. Every CV is read by a real person.', cta: 'See Open Roles', href: '/contact', icon: 'pen' },
+];
+---
+
+<BaseLayout
+  title="Our Story"
+  description="Édition — an editorial fashion house designed with intention and made to last."
+  bleedTop
+>
+  <div class="abt-wrap">
+    <!-- 1 · HERO -->
+    <section class="abt-hero" aria-label={`About ${SITE.name}`}>
+      <div class="abt-hero-bg" style="background-image:url('/images/About%20hero%20bg%20image.png');" aria-hidden="true"></div>
+      <div class="abt-hero-overlay" aria-hidden="true"></div>
+      <div class="abt-hero-content reveal">
+        <p class="abt-hero-issue">The House of Édition — Est. 2014</p>
+        <h1 class="abt-hero-h1">Fashion is a form<br />of <em>expression.</em></h1>
+        <div class="abt-hero-rule" aria-hidden="true"></div>
+        <p class="abt-hero-sub">We create clothing that speaks before you do — crafted with intention, worn with conviction.</p>
+      </div>
+      <div class="abt-hero-scroll" aria-hidden="true"><span>Scroll</span><div class="abt-scroll-line"></div></div>
+    </section>
+
+    <!-- 2 · BRAND STORY -->
+    <section class="abt-story">
+      <div class="abt-story-inner">
+        <div class="abt-story-img-wrap reveal">
+          <div class="abt-story-img" style="background-image:url('/images/Our%20story%20image.png');"></div>
+          <div class="abt-story-img-year">
+            <div class="abt-story-img-year-val">2014</div>
+            <div class="abt-story-img-year-lbl">Founded</div>
+          </div>
+        </div>
+        <div class="abt-story-text reveal d1">
+          <p class="abt-story-eyebrow">Our Story</p>
+          <h2 class="abt-story-h2">Born from a <em>love</em> of editorial fashion</h2>
+          <p class="abt-story-body">Founded in London in 2014 by creative director Isabelle Fontaine, Édition was shaped in the pages of fashion magazines and the ateliers of Paris — and built on one belief: that a garment can be both commerce and art.</p>
+          <div class="abt-story-pull">
+            <p class="abt-story-pull-text">“We didn’t want to make clothes. We wanted to make a language.”</p>
+            <span class="abt-story-pull-attr">— Isabelle Fontaine, Creative Director</span>
+          </div>
+          <p class="abt-story-body">Today we show seasonal collections in Paris and Milan — each a new chapter in an ongoing editorial story.</p>
+          <div class="abt-story-cta">
+            <a href="/products" class="btn-outline">Explore Collections
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · PHILOSOPHY -->
+    <section class="abt-values">
+      <div class="abt-values-inner">
+        <div class="abt-values-head reveal">
+          <div>
+            <p class="abt-values-eyebrow">Our Philosophy</p>
+            <h2 class="abt-values-h2">The principles behind<br />every <em>stitch</em></h2>
+          </div>
+          <p class="abt-values-note">Three ideas guide everything we design, source, and create — from first sketch to final garment.</p>
+        </div>
+        <div class="abt-values-grid">
+          {
+            VALUES.map((v, i) => (
+              <div class={`av-col reveal ${i ? `d${i}` : ''}`}>
+                <div class="av-rule"></div>
+                <span class="av-idx">{v.no}</span>
+                <h3 class="av-title">{v.title}</h3>
+                <span class="av-tag">{v.tag}</span>
+                <p class="av-body">{v.body}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 · TIMELINE -->
+    <section class="abt-timeline">
+      <div class="abt-timeline-inner">
+        <div class="abt-timeline-top reveal">
+          <div>
+            <p class="abt-tl-eyebrow">The Journey</p>
+            <h2 class="abt-tl-h2">A decade of<br /><em>editorial</em> milestones</h2>
+          </div>
+          <p class="abt-tl-note">From a Hackney studio to six flagship stores — ten years of making fashion that means something.</p>
+        </div>
+        <div class="abt-tl-grid">
+          {
+            TIMELINE.map((t, i) => (
+              <div class={`abt-tl-card reveal ${i % 3 ? `d${i % 3}` : ''}`}>
+                <div class="abt-tl-year">{t.year}</div>
+                <span class="abt-tl-tag">{t.tag}</span>
+                <div class="abt-tl-title">{t.title}</div>
+                <p class="abt-tl-body">{t.body}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 · TEAM -->
+    <section class="abt-team">
+      <div class="abt-team-inner">
+        <div class="abt-team-head reveal">
+          <div>
+            <p class="abt-team-eyebrow">The People</p>
+            <h2 class="abt-team-h2">The creative <em>minds</em><br />behind Édition</h2>
+          </div>
+          <p class="abt-team-head-note">A small, deliberate team united by the belief that clothing should say something before you speak.</p>
+        </div>
+
+        {
+          TEAM.map((m) => (
+            <div class={`abt-team-row reveal ${m.reverse ? 'reverse' : ''}`}>
+              <div class="abt-team-img-side">
+                <div class="abt-team-img-frame">
+                  <div class="abt-team-img-bg" style={`background-image:url('${m.img}');`}></div>
+                </div>
+                <div class="abt-team-issue-num">{m.num}</div>
+              </div>
+              <div class="abt-team-text-side">
+                <p class="abt-team-role">{m.role}</p>
+                <h3 class="abt-team-name">{m.name}</h3>
+                <p class="abt-team-school">{m.school}</p>
+                <div class="abt-team-divider"></div>
+                <p class="abt-team-bio">{m.bio}</p>
+                <div class="abt-team-pull"><p>“{m.pull}”</p></div>
+                <div class="abt-team-tags">
+                  {m.tags.map((tag) => <span class="abt-team-tag">{tag}</span>)}
+                </div>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- 6 · TESTIMONIALS / PRESS -->
+    <Testimonials />
+
+    <!-- 7 · CONNECT -->
+    <section class="abt-connect">
+      <div class="abt-connect-inner">
+        <div class="abt-connect-top reveal">
+          <p class="abt-connect-eyebrow">Get Involved</p>
+          <h2 class="abt-connect-h2">Four ways to be part<br />of <em>Édition</em></h2>
+          <p class="abt-connect-sub">Whether you want to shop, collaborate, study, or join our team — there’s a way for you here.</p>
+        </div>
+        <div class="abt-connect-grid" style="margin-top:48px;">
+          {
+            CONNECT.map((c, i) => (
+              <div class={`abt-connect-card reveal ${i ? `d${i}` : ''}`}>
+                <div class="abt-connect-icon">
+                  {c.icon === 'heart' && <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>}
+                  {c.icon === 'people' && <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+                  {c.icon === 'press' && <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>}
+                  {c.icon === 'pen' && <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
+                </div>
+                <span class="abt-connect-label">{c.label}</span>
+                <h3 class="abt-connect-title">{c.title}</h3>
+                <p class="abt-connect-body">{c.body}</p>
+                <a href={c.href} class="abt-connect-link">{c.cta}
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

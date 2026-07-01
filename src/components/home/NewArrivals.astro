@@ -1,0 +1,94 @@
+---
+// ============================================================
+//  NewArrivals — section head + category tabs + product grid.
+//  Tabs switch the visible product group client-side (no page
+//  navigation); each tab still has an href so it degrades to a
+//  real link if JS is unavailable.
+// ============================================================
+import type { ProductCard } from '~/lib/shopify/types';
+import ProductGrid from '~/components/product/ProductGrid.astro';
+
+interface Group {
+  label: string;
+  href: string;
+  products: ProductCard[];
+}
+interface Props {
+  groups: Group[];
+}
+const { groups } = Astro.props;
+const hasGroups = groups.length > 0;
+---
+
+<section class="section" id="new-arrivals" style="background:var(--editorial-bg-light);">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div>
+        <span class="eyebrow">Just Landed</span>
+        <h2 class="h-sec">New Arrivals — <em>SS26</em></h2>
+      </div>
+      {
+        hasGroups && (
+          <div class="tabs" data-arrivals-tabs role="tablist">
+            {groups.map((g, i) => (
+              <a
+                class={`tab-btn ${i === 0 ? 'active' : ''}`}
+                href={g.href}
+                role="tab"
+                aria-selected={i === 0 ? 'true' : 'false'}
+                data-tab={i}
+              >
+                {g.label}
+              </a>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    {
+      hasGroups ? (
+        <div data-arrivals-panels>
+          {groups.map((g, i) => (
+            <div
+              class="reveal d1 arrivals-panel"
+              data-panel={i}
+              style={i === 0 ? '' : 'display:none;'}
+            >
+              <ProductGrid products={g.products} eagerCount={i === 0 ? 4 : 0} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p class="shop-count">New arrivals are on their way — check back soon.</p>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  const tabsRoot = document.querySelector('[data-arrivals-tabs]');
+  const panelsRoot = document.querySelector('[data-arrivals-panels]');
+  if (tabsRoot && panelsRoot) {
+    const tabs = Array.from(tabsRoot.querySelectorAll('[data-tab]'));
+    const panels = Array.from(panelsRoot.querySelectorAll('[data-panel]'));
+
+    function select(n: number) {
+      tabs.forEach((t, idx) => {
+        const on = idx === n;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panels.forEach((p, idx) => {
+        (p as HTMLElement).style.display = idx === n ? '' : 'none';
+      });
+    }
+
+    tabs.forEach((tab, idx) => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        select(idx);
+      });
+    });
+  }
+</script>

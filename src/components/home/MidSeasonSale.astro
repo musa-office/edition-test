@@ -1,0 +1,73 @@
+---
+// ============================================================
+//  MidSeasonSale — promo banner with live countdown + a rail
+//  of products (live Shopify).
+// ============================================================
+import type { ProductCard } from '~/lib/shopify/types';
+import ProductCardComp from '~/components/product/ProductCard.astro';
+
+interface Props {
+  products: ProductCard[];
+}
+const { products } = Astro.props;
+---
+
+<section class="section sale" id="sale">
+  <div class="wrap">
+    <div class="sale-top reveal">
+      <div class="sale-head">
+        <span class="eyebrow">Mid-Season Sale</span>
+        <h2 class="sale-title">Up to <em>50%</em> Off</h2>
+      </div>
+      <div class="countdown" id="countdown" aria-label="Sale ends in">
+        <div class="cd-unit"><span class="cd-num" id="cdDays">00</span><span class="cd-lbl">Days</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-unit"><span class="cd-num" id="cdHours">00</span><span class="cd-lbl">Hours</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-unit"><span class="cd-num" id="cdMins">00</span><span class="cd-lbl">Minutes</span></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-unit"><span class="cd-num" id="cdSecs">00</span><span class="cd-lbl">Seconds</span></div>
+      </div>
+    </div>
+
+    <div class="sale-card reveal d1">
+      <div class="sale-img">
+        <span class="sale-flag">SS26 · Final Reductions</span>
+        <img src="/images/section%20sale%20image.png" alt="Mid-season sale campaign" />
+      </div>
+      <div class="sale-panel">
+        <div class="sale-panel-head"><h3>Complete the Edit</h3></div>
+        <div class="sale-rail">
+          {products.map((p) => <ProductCardComp product={p} />)}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Countdown to 5 days from first view (per-visitor, persisted in session).
+  const KEY = 'ed_sale_deadline';
+  let deadline = Number(sessionStorage.getItem(KEY));
+  if (!deadline || Number.isNaN(deadline)) {
+    deadline = Date.now() + 5 * 24 * 60 * 60 * 1000;
+    sessionStorage.setItem(KEY, String(deadline));
+  }
+  const pad = (n: number) => String(Math.max(0, n)).padStart(2, '0');
+  const els = {
+    d: document.getElementById('cdDays'),
+    h: document.getElementById('cdHours'),
+    m: document.getElementById('cdMins'),
+    s: document.getElementById('cdSecs'),
+  };
+  function tick() {
+    const diff = deadline - Date.now();
+    const sec = Math.floor(diff / 1000);
+    if (els.d) els.d.textContent = pad(Math.floor(sec / 86400));
+    if (els.h) els.h.textContent = pad(Math.floor((sec % 86400) / 3600));
+    if (els.m) els.m.textContent = pad(Math.floor((sec % 3600) / 60));
+    if (els.s) els.s.textContent = pad(sec % 60);
+  }
+  tick();
+  setInterval(tick, 1000);
+</script>

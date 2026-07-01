@@ -1,0 +1,21 @@
+---
+// ============================================================
+//  401 — Unauthorized / access denied.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+// Serve with the correct status when reached directly.
+Astro.response.status = 401;
+---
+
+<BaseLayout title="Access denied">
+  <section class="wrap err-page">
+    <div class="err-code">401</div>
+    <h1>Access denied.</h1>
+    <p>You need to be signed in to view this page — or your session has expired.</p>
+    <div class="err-actions">
+      <a class="btn-primary" href="/account">Sign in</a>
+      <a class="btn-outline" href="/">Back home</a>
+    </div>
+  </section>
+</BaseLayout>

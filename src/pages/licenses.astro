@@ -1,0 +1,56 @@
+---
+// ============================================================
+//  Licenses — attributions for fonts, libraries, and imagery.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { SITE } from '~/config/site';
+---
+
+<BaseLayout title="Licenses" description="Fonts, libraries, and image attributions used in the Édition theme.">
+  <section class="shop">
+    <div class="wrap">
+      <div class="page-intro">
+        <span class="eyebrow">Credits</span>
+        <h1>Licenses &amp; <em>Attributions</em></h1>
+        <p>The {SITE.name} theme is built on open tools and openly-licensed assets. Everything used to create it is credited below.</p>
+      </div>
+
+      <div class="rte" style="max-width:760px;">
+        <h2>Typefaces</h2>
+        <ul>
+          <li><strong>Playfair Display</strong> — Claus Eggers Sørensen. <a href="https://openfontlicense.org" target="_blank" rel="noopener">SIL Open Font License 1.1</a>.</li>
+          <li><strong>Manrope</strong> — Mikhail Sharanda. <a href="https://openfontlicense.org" target="_blank" rel="noopener">SIL Open Font License 1.1</a>.</li>
+        </ul>
+
+        <h2>Framework &amp; libraries</h2>
+        <ul>
+          <li><strong>Astro</strong> — MIT License.</li>
+          <li><strong>React &amp; React DOM</strong> — MIT License.</li>
+          <li><strong>nanostores</strong> — MIT License.</li>
+          <li><strong>@astrojs/node</strong>, <strong>@astrojs/react</strong> — MIT License.</li>
+        </ul>
+
+        <h2>Commerce</h2>
+        <ul>
+          <li><strong>Shopify Storefront API</strong> &amp; <strong>Customer Account API</strong> — used under the Shopify API License &amp; Terms of Use. Product data, imagery, and pricing belong to the connected store.</li>
+        </ul>
+
+        <h2>Imagery</h2>
+        <ul>
+          <li>Editorial and lookbook photography is provided for demonstration only. Replace all placeholder imagery with your own licensed assets before going live.</li>
+          <li>Featured menu thumbnails are sourced from <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a> under the Unsplash License.</li>
+        </ul>
+
+        <h2>Icons</h2>
+        <ul>
+          <li>Interface icons are bespoke inline SVGs drawn in a consistent 24×24 stroke style — free to use and modify within this theme.</li>
+        </ul>
+
+        <h2>Using this theme</h2>
+        <p>This theme is licensed to the purchaser for use on their own storefront(s). You may customise the code freely. Redistribution or resale of the theme itself — as a template — is not permitted. Third-party assets remain under their respective licenses listed above.</p>
+
+        <p>Questions about licensing? Email <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

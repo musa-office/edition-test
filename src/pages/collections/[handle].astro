@@ -1,0 +1,150 @@
+---
+// ============================================================
+//  Collection PLP — products in a collection, sort + pagination.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ShopListing from '~/components/product/ShopListing.astro';
+import {
+  getCollection,
+  getAllCollections,
+  COLLECTION_SORT_OPTIONS,
+  resolveSort,
+} from '~/lib/shopify';
+import { paginationUrls } from '~/lib/pagination';
+import type { Collection, CollectionWithProducts } from '~/lib/shopify/types';
+
+const { handle } = Astro.params;
+const url = Astro.url;
+const sortValue = url.searchParams.get('sort') ?? COLLECTION_SORT_OPTIONS[0].value;
+const sort = resolveSort(COLLECTION_SORT_OPTIONS, sortValue);
+const after = url.searchParams.get('after');
+const before = url.searchParams.get('before');
+
+// Faceted filters: each `filter` param is a Storefront ProductFilter JSON.
+const selectedInputs = url.searchParams.getAll('filter');
+const productFilters = selectedInputs
+  .map((s) => {
+    try {
+      return JSON.parse(s);
+    } catch {
+      return null;
+    }
+  })
+  .filter(Boolean);
+
+let collection: CollectionWithProducts | null = null;
+let collections: Collection[] = [];
+let prevUrl: string | null = null;
+let nextUrl: string | null = null;
+let loadFailed = false;
+
+try {
+  const [col, cols] = await Promise.all([
+    getCollection({
+      handle: handle!,
+      pageSize: 12,
+      after,
+      before,
+      sortKey: sort.sortKey,
+      reverse: sort.reverse,
+      filters: productFilters,
+    }),
+    getAllCollections(),
+  ]);
+  collection = col;
+  collections = cols;
+  if (collection) ({ prevUrl, nextUrl } = paginationUrls(url, collection.products.pageInfo));
+} catch (err) {
+  console.error('[collection] load failed:', (err as Error).message);
+  loadFailed = true;
+}
+
+if (loadFailed) Astro.response.status = 503;
+else if (!collection) Astro.response.status = 404;
+
+const items = collection?.products.items ?? [];
+const countLabel = `${items.length} ${items.length === 1 ? 'piece' : 'pieces'}`;
+---
+
+{
+  collection ? (
+    <BaseLayout
+      title={collection.seo?.title ?? collection.title}
+      description={collection.seo?.description ?? collection.description}
+      image={collection.image?.url}
+    >
+      <section class="shop">
+        <div class="wrap">
+          <div class="shop-header">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+              <a href="/">Home</a>
+              <span class="bc-sep">›</span>
+              <a href="/collections">Collections</a>
+              <span class="bc-sep">›</span>
+              <span class="bc-current">{collection.title}</span>
+            </nav>
+            <div class="shop-head">
+              <span class="shop-eyebrow"><span class="dot" />The edit</span>
+              <h1>{collection.title}</h1>
+              {collection.description && (
+                <div class="shop-desc" data-readmore>
+                  <p class="shop-desc-text">{collection.description}</p>
+                  <button class="read-more" type="button" data-readmore-btn aria-expanded="false">
+                    Read more
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <ShopListing
+            products={items}
+            countLabel={countLabel}
+            sortOptions={COLLECTION_SORT_OPTIONS}
+            sortValue={sort.value}
+            sortAction={`/collections/${collection.handle}`}
+            collections={collections}
+            activeHandle={collection.handle}
+            filters={collection.filters ?? []}
+            selectedInputs={selectedInputs}
+            prevUrl={prevUrl}
+            nextUrl={nextUrl}
+            emptyTitle="This edit is empty"
+            emptyBody="No pieces in this collection yet — explore the full range."
+          />
+        </div>
+      </section>
+    </BaseLayout>
+  ) : (
+    <BaseLayout title={loadFailed ? 'Something went wrong' : 'Collection not found'}>
+      <section class="shop">
+        <div class="wrap shop-empty">
+          <p class="se-title">{loadFailed ? 'Something went wrong' : 'Collection not found'}</p>
+          <p>{loadFailed ? "We couldn't load this collection right now." : "We couldn't find that collection."}</p>
+          <a class="btn-primary" href="/collections">All collections</a>
+        </div>
+      </section>
+    </BaseLayout>
+  )
+}
+
+<script>
+  // Collection description: clamp to 3 lines, reveal on "Read more".
+  // The button only appears when the text actually overflows.
+  document.querySelectorAll('[data-readmore]').forEach((box) => {
+    const text = box.querySelector('.shop-desc-text') as HTMLElement | null;
+    const btn = box.querySelector('[data-readmore-btn]') as HTMLButtonElement | null;
+    if (!text || !btn) return;
+
+    if (text.scrollHeight - text.clientHeight <= 4) {
+      btn.style.display = 'none';
+      return;
+    }
+    btn.addEventListener('click', () => {
+      const expanded = box.classList.toggle('is-expanded');
+      btn.setAttribute('aria-expanded', String(expanded));
+      btn.textContent = expanded ? 'Read less' : 'Read more';
+    });
+  });
+</script>
+

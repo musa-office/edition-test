@@ -1,0 +1,48 @@
+---
+// ============================================================
+//  Shopify CMS page by handle (/pages/[handle]).
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getPage } from '~/lib/shopify';
+import type { ShopifyPage } from '~/lib/shopify/services/content';
+
+const { handle } = Astro.params;
+
+let page: ShopifyPage | null = null;
+let loadFailed = false;
+
+try {
+  page = await getPage(handle!);
+} catch (err) {
+  loadFailed = true;
+  console.error('[page] load failed:', (err as Error).message);
+}
+
+if (loadFailed) Astro.response.status = 503;
+else if (!page) Astro.response.status = 404;
+---
+
+{
+  page ? (
+    <BaseLayout title={page.seo?.title ?? page.title} description={page.seo?.description ?? page.bodySummary}>
+      <section class="shop">
+        <div class="wrap">
+          <div class="page-intro">
+            <span class="eyebrow">Édition</span>
+            <h1>{page.title}</h1>
+          </div>
+          <div class="rte" set:html={page.body} />
+        </div>
+      </section>
+    </BaseLayout>
+  ) : (
+    <BaseLayout title={loadFailed ? 'Something went wrong' : 'Page not found'}>
+      <section class="wrap err-page">
+        <div class="err-code">{loadFailed ? '503' : '404'}</div>
+        <h1>{loadFailed ? 'Something went wrong' : 'Page not found'}</h1>
+        <p>{loadFailed ? "We couldn't load this page right now." : "We couldn't find that page."}</p>
+        <a class="btn-primary" href="/">Back home</a>
+      </section>
+    </BaseLayout>
+  )
+}

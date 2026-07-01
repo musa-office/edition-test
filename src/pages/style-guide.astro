@@ -1,0 +1,145 @@
+---
+// ============================================================
+//  Style Guide — the Édition design system at a glance.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+const COLORS = [
+  { name: 'Primary', val: '#3EA3D4', varName: '--primary' },
+  { name: 'Primary Hover', val: '#237FAB', varName: '--editorial-primary-hover' },
+  { name: 'Secondary', val: '#F4B79A', varName: '--editorial-secondary' },
+  { name: 'Ink', val: '#121A22', varName: '--ink' },
+  { name: 'Dark', val: '#101820', varName: '--editorial-dark' },
+  { name: 'Gray', val: '#5E6B75', varName: '--gray' },
+  { name: 'Muted', val: '#9AA7AF', varName: '--editorial-text-muted' },
+  { name: 'Border', val: '#D9E3E8', varName: '--border' },
+  { name: 'Surface Cool', val: '#EAF2F5', varName: '--editorial-surface-cool' },
+  { name: 'Surface Warm', val: '#FBE4D8', varName: '--editorial-surface-warm' },
+  { name: 'Paper', val: '#F7FAFB', varName: '--paper' },
+  { name: 'Surface', val: '#FFFFFF', varName: '--editorial-surface' },
+];
+---
+
+<BaseLayout title="Style Guide" description="The Édition design system — colour, type, and components.">
+  <section class="shop">
+    <div class="wrap">
+      <div class="page-intro">
+        <span class="eyebrow">Design System</span>
+        <h1>The <em>Style</em> Guide</h1>
+        <p>Colour, typography, and the interface building blocks that give Édition its calm, editorial voice.</p>
+      </div>
+
+      <!-- Colour -->
+      <section class="sg-section">
+        <div class="sg-head">
+          <span class="eyebrow">01 — Palette</span>
+          <h2>Colour</h2>
+        </div>
+        <div class="sg-swatches">
+          {
+            COLORS.map((c) => (
+              <div class="sg-swatch">
+                <div class="sg-swatch-color" style={`background:${c.val};`}></div>
+                <div class="sg-swatch-meta">
+                  <span class="sg-swatch-name">{c.name}</span>
+                  <span class="sg-swatch-val">{c.val}</span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- Typography -->
+      <section class="sg-section">
+        <div class="sg-head">
+          <span class="eyebrow">02 — Type</span>
+          <h2>Typography</h2>
+        </div>
+        <div class="sg-type">
+          <div class="sg-type-row">
+            <span class="sg-type-label">Display / Serif</span>
+            <span class="sg-serif" style="font-size:clamp(38px,6vw,64px);font-weight:700;letter-spacing:-1.6px;">Fashion that moves</span>
+          </div>
+          <div class="sg-type-row">
+            <span class="sg-type-label">Heading 1</span>
+            <span class="sg-serif" style="font-size:clamp(30px,4vw,46px);font-weight:700;letter-spacing:-1px;">Styled as one story</span>
+          </div>
+          <div class="sg-type-row">
+            <span class="sg-type-label">Heading 2</span>
+            <span class="sg-serif" style="font-size:clamp(24px,3vw,34px);font-weight:600;">Considered, not chaotic</span>
+          </div>
+          <div class="sg-type-row">
+            <span class="sg-type-label">Heading 3</span>
+            <span class="sg-serif" style="font-size:22px;font-weight:600;">The considered wardrobe</span>
+          </div>
+          <div class="sg-type-row">
+            <span class="sg-type-label">Body / Sans</span>
+            <span class="sg-sans" style="font-size:16px;line-height:1.7;color:var(--gray);max-width:52ch;">Manrope carries all body copy and UI. Édition pairs Playfair Display headings with a clean, humanist sans for a balance of editorial character and everyday legibility.</span>
+          </div>
+          <div class="sg-type-row">
+            <span class="sg-type-label">Eyebrow</span>
+            <span class="eyebrow">Just Landed</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Buttons -->
+      <section class="sg-section">
+        <div class="sg-head">
+          <span class="eyebrow">03 — Actions</span>
+          <h2>Buttons &amp; Links</h2>
+        </div>
+        <div class="sg-row">
+          <button class="btn-primary" type="button">Primary</button>
+          <button class="btn-outline" type="button">Outline</button>
+          <a class="btn-line" href="#">Text link →</a>
+          <a class="link-arrow" href="#">View all
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- Badges -->
+      <section class="sg-section">
+        <div class="sg-head">
+          <span class="eyebrow">04 — Labels</span>
+          <h2>Badges &amp; Chips</h2>
+        </div>
+        <div class="sg-tokens">
+          <span class="sg-badge dark">New</span>
+          <span class="sg-badge sale">−20%</span>
+          <span class="sg-badge soft">Bestseller</span>
+          <span class="sg-badge line">In stock</span>
+        </div>
+      </section>
+
+      <!-- Forms -->
+      <section class="sg-section">
+        <div class="sg-head">
+          <span class="eyebrow">05 — Inputs</span>
+          <h2>Form Elements</h2>
+        </div>
+        <div class="sg-form">
+          <div class="sg-field">
+            <label for="sg-name">Full name</label>
+            <input id="sg-name" type="text" placeholder="Isabelle Fontaine" />
+          </div>
+          <div class="sg-field">
+            <label for="sg-email">Email</label>
+            <input id="sg-email" type="email" placeholder="you@email.com" />
+          </div>
+          <div class="sg-field">
+            <label for="sg-size">Size</label>
+            <select id="sg-size">
+              <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option>
+            </select>
+          </div>
+          <div class="sg-field" style="justify-content:flex-end;">
+            <label class="sg-check"><input type="checkbox" checked /> Keep me updated</label>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,19 @@
+---
+// ============================================================
+//  Cart — full-page bag view (mirrors the drawer; same store).
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import CartPage from '~/components/react/CartPage.tsx';
+---
+
+<BaseLayout title="Your Bag" description="Review your Édition bag and check out.">
+  <section class="shop">
+    <div class="wrap">
+      <div class="page-intro">
+        <span class="eyebrow">Your Bag</span>
+        <h1>Shopping <em>bag</em></h1>
+      </div>
+      <CartPage client:load />
+    </div>
+  </section>
+</BaseLayout>

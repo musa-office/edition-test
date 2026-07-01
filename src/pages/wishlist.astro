@@ -1,0 +1,20 @@
+---
+// ============================================================
+//  Wishlist — saved pieces (localStorage, client-rendered).
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import WishlistGrid from '~/components/react/WishlistGrid.tsx';
+---
+
+<BaseLayout title="Wishlist" description="Your saved Édition pieces.">
+  <section class="shop">
+    <div class="wrap">
+      <div class="page-intro">
+        <span class="eyebrow">Saved</span>
+        <h1>Your <em>wishlist</em></h1>
+        <p>The pieces you've saved for later. They live in this browser — sign in soon to sync across devices.</p>
+      </div>
+      <WishlistGrid client:only="react" />
+    </div>
+  </section>
+</BaseLayout>

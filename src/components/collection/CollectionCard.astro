@@ -1,0 +1,33 @@
+---
+// ============================================================
+//  CollectionCard — editorial category tile linking to a PLP.
+// ============================================================
+import type { Collection } from '~/lib/shopify/types';
+
+interface Props {
+  collection: Collection;
+  eyebrow?: string;
+}
+
+const { collection, eyebrow = 'Collection' } = Astro.props;
+const img = collection.image;
+---
+
+<a class="cat-card" href={`/collections/${collection.handle}`}>
+  {
+    img ? (
+      <img src={img.url} alt={img.altText ?? collection.title} loading="lazy" />
+    ) : (
+      <div class="pdp-noimg">{collection.title}</div>
+    )
+  }
+  <span class="cat-go">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+  </span>
+  <div class="cat-meta">
+    <span class="c-count">{eyebrow}</span>
+    <div class="c-name">{collection.title}</div>
+  </div>
+</a>

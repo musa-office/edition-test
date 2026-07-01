@@ -1,0 +1,131 @@
+---
+// ============================================================
+//  Journal index — the editorial blog. Articles from the Shopify
+//  blog (SITE.blogHandle). Header band + featured split + grid.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getArticles } from '~/lib/shopify';
+import { SITE } from '~/config/site';
+import { paginationUrls } from '~/lib/pagination';
+import type { Article } from '~/lib/shopify/services/content';
+
+const url = Astro.url;
+const after = url.searchParams.get('after');
+
+let articles: Article[] = [];
+let nextUrl: string | null = null;
+let loadError = false;
+
+try {
+  const page = await getArticles(SITE.blogHandle, { pageSize: 13, after });
+  articles = page.items;
+  ({ nextUrl } = paginationUrls(url, page.pageInfo));
+} catch (err) {
+  console.error('[journal] load failed:', (err as Error).message);
+  loadError = true;
+}
+
+const fmtDate = (iso: string) =>
+  new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(iso));
+
+// First page leads with a featured article.
+const featured = !after ? articles[0] : null;
+const rest = featured ? articles.slice(1) : articles;
+---
+
+<BaseLayout title="The Journal" description="Style notes, stories, and editorial dispatches from Édition.">
+  <!-- Header band -->
+  <section class="pdp-top">
+    <div class="wrap">
+      <div class="shop-header">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Home</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-current">Journal</span>
+        </nav>
+        <div class="shop-head-row">
+          <div class="shop-head">
+            <span class="shop-eyebrow"><span class="dot"></span>The Édition Journal</span>
+            <h1>Style Notes &amp; Stories</h1>
+            <p>Dispatches on dressing with intention — trend edits, care guides, and the thinking behind the collection.</p>
+          </div>
+          <ul class="shop-trust">
+            <li>
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              New dispatches weekly
+            </li>
+            <li>
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              Style notes &amp; care guides
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="jx">
+    <div class="wrap">
+      {
+        loadError ? (
+          <div class="shop-empty"><p class="se-title">Couldn't load the journal</p><p>Please try again shortly.</p></div>
+        ) : articles.length === 0 ? (
+          <div class="shop-empty"><p class="se-title">No stories yet</p><p>New journal entries are on the way.</p></div>
+        ) : (
+          <>
+            {featured && (
+              <a class="jx-feat reveal" href={`/journal/${featured.handle}`}>
+                <div class="jx-feat-img">
+                  <img src={featured.image?.url ?? '/images/Blog%20Image%2001.png'} alt={featured.title} loading="eager" />
+                  <span class="jx-feat-badge">Featured</span>
+                </div>
+                <div class="jx-feat-body">
+                  <span class="jx-eyebrow">Latest Story</span>
+                  <div class="jx-feat-meta">
+                    {featured.author && <><span>{featured.author}</span><span class="sep">·</span></>}
+                    <span class="date">{fmtDate(featured.publishedAt)}</span>
+                  </div>
+                  <h2 class="jx-feat-title">{featured.title}</h2>
+                  {featured.excerpt && <p class="jx-feat-excerpt">{featured.excerpt}</p>}
+                  <span class="jx-read">Read Article
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </span>
+                </div>
+              </a>
+            )}
+
+            {rest.length > 0 && (
+              <div class="jx-list-head reveal">
+                <span class="eyebrow">More Stories</span>
+                <h2 class="h-sec">From the <em>Journal</em></h2>
+              </div>
+            )}
+
+            <div class="journal-list reveal d1">
+              {rest.map((a) => (
+                <a class="journal-card" href={`/journal/${a.handle}`}>
+                  <div class="journal-card-img">
+                    <img src={a.image?.url ?? '/images/Blog%20Image%2002.png'} alt={a.title} loading="lazy" />
+                  </div>
+                  <div class="journal-card-meta">
+                    {a.author && <><span>{a.author}</span><span class="sep">·</span></>}
+                    <span class="date">{fmtDate(a.publishedAt)}</span>
+                  </div>
+                  <h2>{a.title}</h2>
+                  {a.excerpt && <p>{a.excerpt}</p>}
+                  <span class="journal-card-link">Read
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </span>
+                </a>
+              ))}
+            </div>
+
+            {nextUrl && (
+              <div class="shop-pager"><a class="btn-line" href={nextUrl}>Older stories →</a></div>
+            )}
+          </>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

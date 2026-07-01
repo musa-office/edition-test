@@ -1,0 +1,50 @@
+---
+// ============================================================
+//  Collections index — editorial category grid.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import CollectionCard from '~/components/collection/CollectionCard.astro';
+import { getAllCollections } from '~/lib/shopify';
+import type { Collection } from '~/lib/shopify/types';
+
+let collections: Collection[] = [];
+let loadError = false;
+
+try {
+  collections = await getAllCollections();
+} catch (err) {
+  console.error('[collections] load failed:', (err as Error).message);
+  loadError = true;
+}
+---
+
+<BaseLayout title="Collections" description="Explore every Édition edit — curated by season, story, and silhouette.">
+  <section class="shop">
+    <div class="wrap">
+      <div class="shop-header">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Home</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-current">Collections</span>
+        </nav>
+        <div class="shop-head">
+          <span class="shop-eyebrow"><span class="dot"></span>Curated edits</span>
+          <h1>Collections</h1>
+          <p>Every edit, by season and story — from SS26 to the enduring essentials.</p>
+        </div>
+      </div>
+
+      {
+        loadError ? (
+          <div class="shop-empty"><p class="se-title">Couldn't load collections</p><p>Please try again shortly.</p></div>
+        ) : collections.length === 0 ? (
+          <div class="shop-empty"><p class="se-title">No collections yet</p><p>Check back soon.</p></div>
+        ) : (
+          <div class="cat-grid">
+            {collections.map((c) => <CollectionCard collection={c} eyebrow="Shop the edit" />)}
+          </div>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

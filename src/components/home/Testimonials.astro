@@ -1,0 +1,63 @@
+---
+// ============================================================
+//  Testimonials — press strip + verified-buyer quote cards.
+// ============================================================
+const press = ['VOGUE', 'ELLE', "HARPER'S BAZAAR", 'WWD', 'BUSINESS OF FASHION'];
+const reviews = [
+  { date: 'March 2026', text: 'The cashmere sweater is unlike anything I’ve owned. It drapes perfectly and feels luxurious without being fussy — I’ve worn it almost every day since.', product: 'Cashmere Blend Sweater — Ivory', initials: 'AR', avatar: 'var(--editorial-dark)', name: 'Amélie Rousseau', loc: 'Paris, France' },
+  { date: 'February 2026', text: 'The structured tote is hands-down the best investment I’ve made. Beautifully constructed, incredibly functional, and it gets better with every use.', product: 'The Édition Structured Tote — Onyx', initials: 'SW', avatar: 'var(--primary)', name: 'Serena Whitfield', loc: 'London, UK' },
+  { date: 'January 2026', text: 'I ordered the wool coat hesitantly — I was wrong to hesitate. The fit, the weight, the warmth. It’s the coat I’ll wear for the next twenty years.', product: 'Fluid Wool Coat — Sky Blue', initials: 'ML', avatar: 'var(--editorial-secondary-hover)', name: 'Marcus Lindgren', loc: 'Stockholm, Sweden' },
+  { date: 'April 2026', text: 'Édition’s satin dress is everything I wanted — elegant, versatile, and impossibly smooth. I’ve dressed it up and down and it always looks exactly right.', product: 'Satin Slip Dress — Soft Peach', initials: 'NK', avatar: 'var(--editorial-primary-hover)', name: 'Noa Kim', loc: 'Seoul, South Korea' },
+];
+---
+
+<section class="section testi" id="testimonials">
+  <div class="testi-inner">
+    <div class="testi-head reveal">
+      <span class="eyebrow center">Press &amp; People</span>
+      <h2 class="h-sec">Worn, Written &amp; <em>Remembered</em></h2>
+    </div>
+
+    <div class="press-strip reveal">
+      {
+        press.map((p, i) => (
+          <>
+            {i > 0 && <span class="press-strip-sep"></span>}
+            <span class="press-strip-item">{p}</span>
+          </>
+        ))
+      }
+    </div>
+
+    <div class="testi-carousel-wrap reveal d1">
+      <div class="testi-carousel">
+        {
+          reviews.map((r) => (
+            <div class="testi-card">
+              <div class="testi-card-meta">
+                <span class="testi-verified">
+                  <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                  Verified Buyer
+                </span>
+                <span class="testi-date">{r.date}</span>
+              </div>
+              <div class="testi-card-stars">★★★★★</div>
+              <p class="testi-card-text">{r.text}</p>
+              <div class="testi-card-product">
+                <span class="testi-product-label">Purchased</span>
+                <span class="testi-product-name">{r.product}</span>
+              </div>
+              <div class="testi-card-foot">
+                <div class="testi-card-avatar" style={`background:${r.avatar};`}>{r.initials}</div>
+                <div class="testi-card-author-wrap">
+                  <span class="testi-card-name">{r.name}</span>
+                  <span class="testi-card-loc">{r.loc}</span>
+                </div>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,86 @@
+---
+// ============================================================
+//  Home — the editorial storefront landing page.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Hero from '~/components/home/Hero.astro';
+import NewArrivals from '~/components/home/NewArrivals.astro';
+import FeaturedShowcase from '~/components/home/FeaturedShowcase.astro';
+import Lookbook from '~/components/home/Lookbook.astro';
+import BestSellers from '~/components/home/BestSellers.astro';
+import MidSeasonSale from '~/components/home/MidSeasonSale.astro';
+import Campaign from '~/components/home/Campaign.astro';
+import Testimonials from '~/components/home/Testimonials.astro';
+import Journal from '~/components/home/Journal.astro';
+import { getProducts, getArticles, getCollection, getProduct } from '~/lib/shopify';
+import { SITE } from '~/config/site';
+import type { ProductCard, Product } from '~/lib/shopify/types';
+import type { Article } from '~/lib/shopify/services/content';
+
+let newArrivals: ProductCard[] = [];
+let bestSellers: ProductCard[] = [];
+let articles: Article[] = [];
+
+// New Arrivals tab groups — products per category, switched client-side.
+const TAB_DEFS = [
+  { label: 'All', href: '/products', handle: null as string | null },
+  { label: 'Women', href: '/collections/women-s-fashion', handle: 'women-s-fashion' },
+  { label: 'Men', href: '/collections/mens-fashion', handle: 'mens-fashion' },
+  { label: 'Kids', href: '/collections/kid-s-fashion', handle: 'kid-s-fashion' },
+  { label: 'New In', href: '/collections/new-arrivals', handle: 'new-arrivals' },
+];
+let arrivalGroups: { label: string; href: string; products: ProductCard[] }[] = [];
+
+try {
+  const [fresh, best, journal, ...cols] = await Promise.all([
+    getProducts({ pageSize: 8, sortKey: 'CREATED_AT', reverse: true }),
+    getProducts({ pageSize: 8, sortKey: 'BEST_SELLING' }),
+    getArticles(SITE.blogHandle, { pageSize: 4 }).catch(() => ({ items: [] as Article[] })),
+    ...TAB_DEFS.filter((t) => t.handle).map((t) =>
+      getCollection({ handle: t.handle as string, pageSize: 8 }).catch(() => null),
+    ),
+  ]);
+  newArrivals = fresh.items;
+  bestSellers = best.items;
+  articles = journal.items;
+
+  const byHandle = new Map<string, ProductCard[]>();
+  TAB_DEFS.filter((t) => t.handle).forEach((t, idx) => {
+    byHandle.set(t.handle as string, cols[idx]?.products.items ?? []);
+  });
+  arrivalGroups = TAB_DEFS.map((t) => ({
+    label: t.label,
+    href: t.href,
+    products: t.handle ? (byHandle.get(t.handle) ?? []) : newArrivals,
+  })).filter((g) => g.products.length > 0);
+} catch (err) {
+  console.error('[home] Shopify load failed:', (err as Error).message);
+}
+
+const saleProducts = bestSellers.slice(0, 6);
+
+// Lookbook needs full variant data (options + variants) so its
+// "Shop the Look" items can show selectable sizes + add to bag.
+const lookbookSource = (newArrivals.length ? newArrivals : bestSellers).slice(0, 9);
+let lookbookProducts: Product[] = [];
+try {
+  lookbookProducts = (
+    await Promise.all(lookbookSource.map((p) => getProduct(p.handle).catch(() => null)))
+  ).filter((p): p is Product => p !== null);
+} catch (err) {
+  console.error('[home] lookbook detail load failed:', (err as Error).message);
+}
+---
+
+<BaseLayout bleedTop>
+  <h1 class="sr-only">Édition — Editorial fashion for women and men, SS26 collection</h1>
+  <Hero />
+  <NewArrivals groups={arrivalGroups} />
+  <FeaturedShowcase />
+  <Lookbook products={lookbookProducts} />
+  <BestSellers products={bestSellers} />
+  <MidSeasonSale products={saleProducts} />
+  <Campaign />
+  <Testimonials />
+  <Journal articles={articles} />
+</BaseLayout>

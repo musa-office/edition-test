@@ -1,0 +1,179 @@
+---
+// ============================================================
+//  BaseLayout — html shell shared by every page. Loads fonts,
+//  SEO/OG meta, the fixed header + off-canvas menu, the footer,
+//  and mounts the global cart drawer island once.
+// ============================================================
+import '~/styles/global.css';
+import { SITE } from '~/config/site';
+import Header from '~/components/layout/Header.astro';
+import MobileNav from '~/components/layout/MobileNav.astro';
+import Footer from '~/components/layout/Footer.astro';
+import CartDrawer from '~/components/react/CartDrawer.tsx';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  /** Let a full-bleed hero sit behind the translucent fixed nav. */
+  bleedTop?: boolean;
+  noFooter?: boolean;
+  /** Extra JSON-LD (e.g. Product schema on the PDP). */
+  jsonLd?: Record<string, unknown> | null;
+}
+
+const {
+  title,
+  description = SITE.description,
+  image,
+  bleedTop = false,
+  noFooter = false,
+  jsonLd = null,
+} = Astro.props;
+
+const pageTitle = title ? `${title} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
+const origin = Astro.url.origin;
+const canonical = new URL(Astro.url.pathname, origin).href;
+
+// Site-wide Organization + WebSite structured data.
+const orgLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: origin,
+      description: SITE.description,
+      logo: `${origin}/favicon.svg`,
+      email: SITE.email,
+    },
+    {
+      '@type': 'WebSite',
+      name: SITE.name,
+      url: origin,
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: `${origin}/search?q={search_term_string}`,
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    {/* Fonts — Playfair Display (display) · Manrope (body/UI) */}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Manrope:wght@300;400;500;600;700;800&display=swap"
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#071119" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(orgLd)} />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+
+    {/* Open Graph / Twitter */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+  </head>
+
+  <body>
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <Header />
+    <MobileNav />
+
+    <main id="main" style={bleedTop ? undefined : 'padding-top: var(--nav-h);'}>
+      <slot />
+    </main>
+
+    {!noFooter && <Footer />}
+
+    {/* Global cart drawer island */}
+    <CartDrawer client:load />
+
+    <script>
+      // Reveal-on-scroll: add `.visible` to `.reveal` elements as they
+      // enter the viewport (elements already in view reveal immediately).
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const els = document.querySelectorAll('.reveal');
+      if (reduce) {
+        els.forEach((el) => el.classList.add('visible'));
+      } else {
+        const obs = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                obs.unobserve(e.target);
+              }
+            });
+          },
+          { threshold: 0.06, rootMargin: '0px 0px -20px 0px' },
+        );
+        els.forEach((el) => obs.observe(el));
+      }
+    </script>
+
+    <script>
+      // Wishlist — delegate heart clicks on product cards, persist to
+      // localStorage, and reflect active state + the header badge.
+      import { readWishlist, toggleWish } from '~/lib/wishlist';
+
+      function sync() {
+        const saved = new Set(readWishlist().map((i) => i.handle));
+        document.querySelectorAll('.product[data-wish-handle]').forEach((card) => {
+          const h = (card as HTMLElement).dataset.wishHandle;
+          const btn = card.querySelector('[data-wish-toggle]');
+          btn?.classList.toggle('active', !!h && saved.has(h));
+        });
+        const badge = document.getElementById('wishBadge');
+        if (badge) {
+          const n = saved.size;
+          badge.textContent = String(n);
+          badge.style.display = n > 0 ? '' : 'none';
+        }
+      }
+
+      document.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('[data-wish-toggle]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const card = btn.closest('.product') as HTMLElement | null;
+        if (!card) return;
+        toggleWish({
+          handle: card.dataset.wishHandle ?? '',
+          title: card.dataset.wishTitle ?? '',
+          image: card.dataset.wishImage ?? '',
+          price: card.dataset.wishPrice ?? '',
+          vendor: card.dataset.wishVendor ?? '',
+        });
+        sync();
+      });
+
+      window.addEventListener('wishlist:change', sync);
+      window.addEventListener('storage', sync);
+      sync();
+    </script>
+  </body>
+</html>

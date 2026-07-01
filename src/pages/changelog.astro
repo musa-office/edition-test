@@ -1,0 +1,74 @@
+---
+// ============================================================
+//  Changelog — release history for the Édition theme.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+interface Change { tag: 'new' | 'improved' | 'fixed'; text: string }
+interface Release { version: string; date: string; changes: Change[] }
+
+const RELEASES: Release[] = [
+  {
+    version: '1.0.0',
+    date: 'July 2026',
+    changes: [
+      { tag: 'new', text: 'Initial release — headless Shopify storefront on Astro 6 with React islands.' },
+      { tag: 'new', text: 'Full editorial design: home, shop, collections, product, cart, journal, about, contact.' },
+      { tag: 'new', text: 'Server-side Storefront API integration with a private token — no client-side Shopify calls.' },
+      { tag: 'new', text: 'Cart drawer, predictive search, faceted filters, wishlist, and customer accounts (OAuth).' },
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: 'July 2026',
+    changes: [
+      { tag: 'new', text: 'Interactive lookbook with selectable variants and "Add the Full Look".' },
+      { tag: 'new', text: 'Quick-add to bag from product cards; recently-viewed on the product page.' },
+      { tag: 'improved', text: 'Faceted filters now apply via AJAX with active-filter chips and a mobile filter drawer.' },
+      { tag: 'improved', text: 'Redesigned About, Contact, and Journal pages plus an expanding-panel showcase.' },
+    ],
+  },
+  {
+    version: '1.1.1',
+    date: 'July 2026',
+    changes: [
+      { tag: 'fixed', text: 'Resolved mobile horizontal overflow and corrected the header layout on small screens.' },
+      { tag: 'improved', text: 'Reworked the mobile navigation into an accordion menu with expandable submenus.' },
+      { tag: 'fixed', text: 'Product grids, footer newsletter, and section layouts tuned across mobile breakpoints.' },
+    ],
+  },
+];
+---
+
+<BaseLayout title="Changelog" description="Release history and updates for the Édition theme.">
+  <section class="shop">
+    <div class="wrap">
+      <div class="page-intro">
+        <span class="eyebrow">Release Notes</span>
+        <h1>What's <em>New</em></h1>
+        <p>Every improvement, refinement, and fix shipped to the Édition theme — newest first.</p>
+      </div>
+
+      <div class="log-list">
+        {
+          RELEASES.slice().reverse().map((rel) => (
+            <article class="log-entry">
+              <div class="log-top">
+                <span class="log-version">v{rel.version}</span>
+                <span class="log-date">{rel.date}</span>
+              </div>
+              <ul class="log-changes">
+                {rel.changes.map((c) => (
+                  <li>
+                    <span class={`log-tag ${c.tag}`}>{c.tag}</span>
+                    {' '}{c.text}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,112 @@
+---
+// ============================================================
+//  Footer — dark canvas combining the newsletter CTA, link
+//  columns, payment strip, and oversized wordmark.
+// ============================================================
+import {
+  SITE,
+  NEWSLETTER,
+  FOOTER_BRAND_BLURB,
+  FOOTER_COLUMNS,
+  SOCIAL,
+  PAYMENTS,
+} from '~/config/site';
+
+const { wordmark } = SITE;
+---
+
+<footer class="cf" id="cta-footer">
+  <div class="cf-inner">
+    <!-- Newsletter CTA -->
+    <div class="cf-cta reveal">
+      <div>
+        <span class="eyebrow">{NEWSLETTER.eyebrow}</span>
+        <h2 class="cf-cta-h">{NEWSLETTER.heading.lead}<br /><em>{NEWSLETTER.heading.em}</em></h2>
+      </div>
+      <div class="cf-cta-right">
+        <span class="cf-form-label">{NEWSLETTER.label}</span>
+        <form class="cf-form" id="cfForm" data-newsletter>
+          <input type="email" placeholder={NEWSLETTER.placeholder} aria-label="Email" required />
+          <button type="submit">
+            {NEWSLETTER.cta}
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </form>
+        <p class="cf-note" id="cfNote">{NEWSLETTER.note}</p>
+      </div>
+    </div>
+
+    <!-- Link columns -->
+    <div class="cf-links reveal d1">
+      <div class="cf-brand">
+        <span class="cf-logo">{wordmark.head}<span>{wordmark.accent}</span>{wordmark.tail}</span>
+        <p>{FOOTER_BRAND_BLURB}</p>
+        <div class="cf-social">
+          {
+            SOCIAL.map((s) => (
+              <a href={s.href} aria-label={s.label} target="_blank" rel="noopener noreferrer">
+                {s.icon === 'instagram' && (
+                  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <rect x="2" y="2" width="20" height="20" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.5" cy="6.5" r="1" />
+                  </svg>
+                )}
+                {s.icon === 'pinterest' && (
+                  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.5 18l3-9M10 13.5a2.5 2.5 0 1 0 .3-4.6" />
+                  </svg>
+                )}
+                {s.icon === 'tiktok' && (
+                  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path d="M9 12a4 4 0 1 0 4 4V4c.5 1.5 2 3 4 3" />
+                  </svg>
+                )}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+      {
+        FOOTER_COLUMNS.map((col) => (
+          <div class="cf-col">
+            <h3>{col.title}</h3>
+            {col.links.map((link) => (
+              <a href={link.href}>{link.label}</a>
+            ))}
+          </div>
+        ))
+      }
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="cf-bottom">
+      <p>{SITE.copyright}</p>
+      <nav class="cf-legal" aria-label="Utility pages">
+        <a href="/style-guide">Style Guide</a>
+        <a href="/changelog">Changelog</a>
+        <a href="/licenses">Licenses</a>
+      </nav>
+      <div class="cf-pay">
+        {PAYMENTS.map((p) => <span>{p}</span>)}
+      </div>
+    </div>
+
+    <!-- Oversized wordmark -->
+    <div class="cf-mark" aria-hidden="true">{wordmark.head}<span>{wordmark.accent}</span>{wordmark.tail}</div>
+  </div>
+</footer>
+
+<script>
+  // Newsletter is a front-end stub until a provider is wired (see PLAN §7).
+  const form = document.querySelector('[data-newsletter]') as HTMLFormElement | null;
+  const note = document.getElementById('cfNote');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (note) note.textContent = 'Thanks — check your inbox to confirm.';
+    form.reset();
+  });
+</script>

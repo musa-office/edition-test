@@ -1,0 +1,20 @@
+---
+// ============================================================
+//  ProductGrid — responsive editorial product grid.
+//  Column count is controlled by the parent context (e.g.
+//  `.shop-main .products` → 3-up; `.pdp-related .products` → 4-up).
+// ============================================================
+import type { ProductCard } from '~/lib/shopify/types';
+import ProductCardComp from './ProductCard.astro';
+
+interface Props {
+  products: ProductCard[];
+  eagerCount?: number;
+}
+
+const { products, eagerCount = 0 } = Astro.props;
+---
+
+<div class="products">
+  {products.map((p, i) => <ProductCardComp product={p} eager={i < eagerCount} />)}
+</div>

@@ -1,0 +1,200 @@
+---
+// ============================================================
+//  Journal article — single blog post from Shopify.
+//  Editorial reading experience: progress bar, byline, rich
+//  body typography, share actions, related stories.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getArticle, getArticles } from '~/lib/shopify';
+import { SITE } from '~/config/site';
+import type { Article } from '~/lib/shopify/services/content';
+
+const { handle } = Astro.params;
+
+let article: Article | null = null;
+let related: Article[] = [];
+let loadFailed = false;
+
+try {
+  article = await getArticle(SITE.blogHandle, handle!);
+  if (article) {
+    const page = await getArticles(SITE.blogHandle, { pageSize: 6 }).catch(() => ({ items: [] as Article[] }));
+    related = page.items.filter((a) => a.handle !== handle).slice(0, 3);
+  }
+} catch (err) {
+  loadFailed = true;
+  console.error('[article] load failed:', (err as Error).message);
+}
+
+if (loadFailed) Astro.response.status = 503;
+else if (!article) Astro.response.status = 404;
+
+const fmtDate = (iso: string) =>
+  new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(iso));
+
+// Reading time from the article body (~200 wpm).
+const words = (article?.contentHtml ?? '').replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+const readMins = Math.max(1, Math.round(words / 200));
+
+const author = article?.author ?? SITE.name;
+const initials = author
+  .split(/\s+/)
+  .map((w) => w[0])
+  .slice(0, 2)
+  .join('')
+  .toUpperCase();
+
+const pageUrl = new URL(Astro.url.pathname, Astro.url.origin).href;
+const shareText = article?.title ?? '';
+const shareX = `https://twitter.com/intent/tweet?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(shareText)}`;
+const sharePin = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(pageUrl)}&description=${encodeURIComponent(shareText)}${article?.image?.url ? `&media=${encodeURIComponent(article.image.url)}` : ''}`;
+const shareFb = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+
+const articleLd = article
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: article.title,
+      datePublished: article.publishedAt,
+      image: article.image?.url ? [article.image.url] : undefined,
+      author: article.author ? { '@type': 'Person', name: article.author } : undefined,
+      publisher: { '@type': 'Organization', name: SITE.name },
+      mainEntityOfPage: pageUrl,
+    }
+  : null;
+---
+
+{
+  article ? (
+    <BaseLayout
+      title={article.seo?.title ?? article.title}
+      description={article.seo?.description ?? article.excerpt ?? undefined}
+      image={article.image?.url}
+      jsonLd={articleLd}
+    >
+      <div class="reading-bar" id="readingBar" aria-hidden="true"></div>
+
+      <article class="post">
+        <div class="wrap">
+          <nav class="breadcrumb" aria-label="Breadcrumb" style="margin-top: clamp(24px,4vw,40px);">
+            <a href="/">Home</a><span class="bc-sep">›</span>
+            <a href="/journal">Journal</a><span class="bc-sep">›</span>
+            <span class="bc-current">{article.title}</span>
+          </nav>
+
+          <header class="post-hero">
+            <span class="article-kicker">The Journal</span>
+            <h1>{article.title}</h1>
+            {article.excerpt && <p class="article-lead">{article.excerpt}</p>}
+            <div class="post-byline">
+              <span class="post-avatar" aria-hidden="true">{initials}</span>
+              <div class="post-byline-text">
+                <span class="post-author">{author}</span>
+                <span class="post-sub">{fmtDate(article.publishedAt)} · {readMins} min read</span>
+              </div>
+            </div>
+          </header>
+
+          {article.image && (
+            <figure class="post-cover">
+              <img src={article.image.url} alt={article.image.altText ?? article.title} loading="eager" />
+            </figure>
+          )}
+
+          <div class="post-grid">
+            <aside class="post-share" aria-label="Share this story">
+              <span class="post-share-lbl">Share</span>
+              <a class="post-share-btn" href={shareX} target="_blank" rel="noopener" aria-label="Share on X">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20"/></svg>
+              </a>
+              <a class="post-share-btn" href={sharePin} target="_blank" rel="noopener" aria-label="Share on Pinterest">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.5 18l3-9M10 13.5a2.5 2.5 0 1 0 .3-4.6"/></svg>
+              </a>
+              <a class="post-share-btn" href={shareFb} target="_blank" rel="noopener" aria-label="Share on Facebook">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+              </a>
+              <button class="post-share-btn" type="button" id="copyLink" aria-label="Copy link" data-url={pageUrl}>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+              </button>
+            </aside>
+
+            <div class="article-body post-body rte" set:html={article.contentHtml ?? ''} />
+          </div>
+
+          <div class="post-foot">
+            <a class="btn-line" href="/journal">← Back to the Journal</a>
+            <a class="btn-primary" href="/products">Shop the collection</a>
+          </div>
+        </div>
+
+        {related.length > 0 && (
+          <section class="post-related">
+            <div class="wrap">
+              <div class="jx-list-head">
+                <span class="eyebrow">Keep Reading</span>
+                <h2 class="h-sec">More from the <em>Journal</em></h2>
+              </div>
+              <div class="journal-list">
+                {related.map((a) => (
+                  <a class="journal-card" href={`/journal/${a.handle}`}>
+                    <div class="journal-card-img">
+                      <img src={a.image?.url ?? '/images/Blog%20Image%2002.png'} alt={a.title} loading="lazy" />
+                    </div>
+                    <div class="journal-card-meta">
+                      {a.author && <><span>{a.author}</span><span class="sep">·</span></>}
+                      <span class="date">{fmtDate(a.publishedAt)}</span>
+                    </div>
+                    <h2>{a.title}</h2>
+                    {a.excerpt && <p>{a.excerpt}</p>}
+                    <span class="journal-card-link">Read
+                      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+      </article>
+    </BaseLayout>
+  ) : (
+    <BaseLayout title={loadFailed ? 'Something went wrong' : 'Article not found'}>
+      <section class="wrap err-page">
+        <div class="err-code">{loadFailed ? '503' : '404'}</div>
+        <h1>{loadFailed ? 'Something went wrong' : 'Article not found'}</h1>
+        <p>{loadFailed ? "We couldn't load this story right now." : "We couldn't find that story."}</p>
+        <a class="btn-primary" href="/journal">All stories</a>
+      </section>
+    </BaseLayout>
+  )
+}
+
+<script>
+  // Reading progress bar.
+  const bar = document.getElementById('readingBar');
+  const article = document.querySelector('.post-body');
+  if (bar && article) {
+    const update = () => {
+      const rect = article.getBoundingClientRect();
+      const total = rect.height - window.innerHeight;
+      const scrolled = Math.min(Math.max(-rect.top, 0), Math.max(total, 0));
+      const pct = total > 0 ? (scrolled / total) * 100 : 0;
+      bar.style.width = `${pct}%`;
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+  }
+
+  // Copy-link button.
+  const copyBtn = document.getElementById('copyLink') as HTMLButtonElement | null;
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(copyBtn.dataset.url || location.href);
+      copyBtn.classList.add('copied');
+      window.setTimeout(() => copyBtn.classList.remove('copied'), 1400);
+    } catch {
+      /* clipboard blocked — no-op */
+    }
+  });
+</script>

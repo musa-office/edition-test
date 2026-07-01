@@ -1,0 +1,123 @@
+---
+// ============================================================
+//  /account — customer dashboard. Three states, all graceful:
+//   • not configured → "accounts coming soon"
+//   • configured + logged out → editorial sign-in
+//   • logged in → profile + recent orders
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import {
+  createCustomerClient,
+  CUSTOMER_OVERVIEW_QUERY,
+  getPublicOrigin,
+  isCustomerAccountConfigured,
+  NotAuthenticatedError,
+} from '~/lib/shopify/customer';
+import type { CustomerOverview } from '~/lib/shopify/customer';
+
+export const prerender = false;
+
+let loggedIn = false;
+let customer: CustomerOverview['customer'] = null;
+let error: string | null = null;
+
+if (isCustomerAccountConfigured) {
+  const client = createCustomerClient(Astro.cookies, getPublicOrigin(Astro.request, Astro.url));
+  loggedIn = client.isLoggedIn();
+  if (loggedIn) {
+    try {
+      const data = await client.query<CustomerOverview>(CUSTOMER_OVERVIEW_QUERY, { first: 10 });
+      customer = data.customer;
+    } catch (err) {
+      if (err instanceof NotAuthenticatedError) {
+        loggedIn = false;
+      } else {
+        console.error('[account] load failed:', (err as Error).message);
+        error = (err as Error).message;
+      }
+    }
+  }
+}
+
+const fullName = [customer?.firstName, customer?.lastName].filter(Boolean).join(' ');
+const greeting = fullName || customer?.emailAddress?.emailAddress || 'there';
+const orders = customer?.orders?.nodes ?? [];
+
+const fmtMoney = (m: { amount: string; currencyCode: string } | null) =>
+  m ? new Intl.NumberFormat('en-US', { style: 'currency', currency: m.currencyCode }).format(Number(m.amount)) : '—';
+const fmtDate = (iso: string) =>
+  new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(iso));
+---
+
+<BaseLayout title="Account">
+  <section class="shop">
+    <div class="wrap">
+      {
+        !isCustomerAccountConfigured ? (
+          <div class="page-intro">
+            <span class="eyebrow">Account</span>
+            <h1>Members, <em>soon</em>.</h1>
+            <p>Customer accounts are arriving shortly — you'll be able to track orders, save addresses, and sync your wishlist across devices. In the meantime, your bag and wishlist live safely in this browser.</p>
+            <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:8px;">
+              <a class="btn-primary" href="/products">Continue shopping</a>
+              <a class="btn-outline" href="/wishlist">View wishlist</a>
+            </div>
+          </div>
+        ) : !loggedIn ? (
+          <div class="page-intro" style="max-width:560px;">
+            <span class="eyebrow">Account</span>
+            <h1>Welcome <em>back</em>.</h1>
+            <p>Sign in to track orders, manage addresses, and keep your edit in one place.</p>
+            <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:8px;">
+              <a class="btn-primary" href="/account/login?return_to=/account">Sign in</a>
+              <a class="btn-outline" href="/products">Keep shopping</a>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div class="page-intro">
+              <span class="eyebrow">My account</span>
+              <h1>Hi, <em>{greeting}</em></h1>
+            </div>
+
+            {error && (
+              <p class="cart-error" style="max-width:520px;">Couldn't load your account: {error}</p>
+            )}
+
+            <div class="account-grid">
+              <section class="account-card">
+                <div class="account-card-head">
+                  <h2>Profile</h2>
+                  <a href="/account/logout" class="link-arrow">Sign out</a>
+                </div>
+                <dl class="account-dl">
+                  <div><dt>Name</dt><dd>{fullName || '—'}</dd></div>
+                  <div><dt>Email</dt><dd>{customer?.emailAddress?.emailAddress || '—'}</dd></div>
+                </dl>
+              </section>
+
+              <section class="account-card">
+                <div class="account-card-head"><h2>Recent orders</h2></div>
+                {orders.length === 0 ? (
+                  <p class="account-empty">You haven't placed any orders yet.</p>
+                ) : (
+                  <ul class="account-orders">
+                    {orders.map((order) => (
+                      <li>
+                        <div>
+                          <span class="order-name">{order.name}</span>
+                          <span class="order-date">{fmtDate(order.processedAt)}</span>
+                        </div>
+                        <span class="order-total">{fmtMoney(order.totalPrice)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </div>
+          </>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,120 @@
+---
+// ============================================================
+//  Shop — all products PLP with sort + cursor pagination.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ShopListing from '~/components/product/ShopListing.astro';
+import { searchProducts, getAllCollections, SEARCH_SORT_OPTIONS, resolveSort } from '~/lib/shopify';
+import { paginationUrls } from '~/lib/pagination';
+import type { Collection, CollectionFilter, ProductCard } from '~/lib/shopify/types';
+
+const url = Astro.url;
+const sortValue = url.searchParams.get('sort') ?? SEARCH_SORT_OPTIONS[0].value;
+const sort = resolveSort(SEARCH_SORT_OPTIONS, sortValue);
+const after = url.searchParams.get('after');
+const before = url.searchParams.get('before');
+
+// Faceted filters: each `filter` param is a Storefront ProductFilter JSON.
+const selectedInputs = url.searchParams.getAll('filter');
+const productFilters = selectedInputs
+  .map((s) => {
+    try {
+      return JSON.parse(s);
+    } catch {
+      return null;
+    }
+  })
+  .filter(Boolean);
+
+let products: ProductCard[] = [];
+let collections: Collection[] = [];
+let filters: CollectionFilter[] = [];
+let prevUrl: string | null = null;
+let nextUrl: string | null = null;
+let loadError = false;
+
+try {
+  // Empty query lists the whole catalogue; the search endpoint is the only
+  // all-products source that also returns faceted filters.
+  const [page, cols] = await Promise.all([
+    searchProducts({
+      query: '',
+      pageSize: 12,
+      after,
+      before,
+      sortKey: sort.sortKey,
+      reverse: sort.reverse,
+      filters: productFilters,
+    }),
+    getAllCollections(),
+  ]);
+  products = page.items;
+  collections = cols;
+  filters = page.filters;
+  ({ prevUrl, nextUrl } = paginationUrls(url, page.pageInfo));
+} catch (err) {
+  console.error('[shop] load failed:', (err as Error).message);
+  loadError = true;
+}
+
+const countLabel = loadError
+  ? 'Catalogue unavailable'
+  : `${products.length} ${products.length === 1 ? 'piece' : 'pieces'}`;
+---
+
+<BaseLayout title="Shop All Pieces" description="The full range — every piece in the SS26 collection.">
+  <section class="shop">
+    <div class="wrap">
+      <div class="shop-header">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Home</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-current">All Pieces</span>
+        </nav>
+        <div class="shop-head-row">
+          <div class="shop-head">
+            <span class="shop-eyebrow"><span class="dot"></span>The SS26 Collection</span>
+            <h1>Shop All Pieces</h1>
+            <p>Fluid tailoring, conscious materials and designs made to last well beyond the season.</p>
+          </div>
+          <ul class="shop-trust">
+            <li>
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              Complimentary shipping over $250
+            </li>
+            <li>
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              30-day easy returns
+            </li>
+            <li>
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              Conscious, made-to-last craft
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {
+        loadError ? (
+          <div class="shop-empty">
+            <p class="se-title">The catalogue couldn't load</p>
+            <p>Please try again shortly.</p>
+          </div>
+        ) : (
+          <ShopListing
+            products={products}
+            countLabel={countLabel}
+            sortOptions={SEARCH_SORT_OPTIONS}
+            sortValue={sort.value}
+            sortAction="/products"
+            collections={collections}
+            filters={filters}
+            selectedInputs={selectedInputs}
+            prevUrl={prevUrl}
+            nextUrl={nextUrl}
+          />
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

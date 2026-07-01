@@ -1,0 +1,77 @@
+---
+// ============================================================
+//  Campaign — full-bleed cinematic video + kinetic marquee.
+// ============================================================
+const marquee = ['The Movement Issue', 'SS / 2026', 'Shot in Lisbon', 'In Full Motion', 'Editorial N°08', 'Shop the Campaign'];
+---
+
+<section class="campaign" id="campaign">
+  <div class="camp-hero">
+    <video class="camp-bg" id="campVideo" src="/videos/camp-bg%20video.mp4" autoplay muted loop playsinline></video>
+    <div class="camp-grad"></div>
+    <button class="camp-play" id="campSound" aria-label="Unmute campaign video" aria-pressed="false">
+      <span id="campSoundIco">
+        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <path d="M11 5 6 9H2v6h4l5 4z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      </span>
+    </button>
+    <div class="camp-inner">
+      <div class="camp-top"><span class="eyebrow">SS26 Campaign</span></div>
+      <div class="camp-bottom">
+        <div class="camp-bottom-text">
+          <span class="camp-kicker">Mid-Season Sale · Ends Sunday</span>
+          <h2 class="camp-h">Up to<br><em>50%</em> Off</h2>
+          <p class="camp-sub">The <b>SS26 collection</b>, reduced for a limited time — shot on location across Lisbon.</p>
+          <span class="camp-code">Use code <b>SS26</b> at checkout</span>
+        </div>
+        <div class="camp-cta">
+          <a class="camp-shop" href="/products?sort=newest">Shop the Sale
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+          </a>
+          <span class="camp-cta-note">Free shipping over $250</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="camp-marquee" aria-hidden="true">
+    <div class="camp-marquee-track">
+      {marquee.map((m) => <span>{m}</span>)}
+      {marquee.map((m) => <span>{m}</span>)}
+    </div>
+  </div>
+</section>
+
+<script>
+  const video = document.getElementById('campVideo') as HTMLVideoElement | null;
+  const btn = document.getElementById('campSound');
+  const ico = document.getElementById('campSoundIco');
+
+  const MUTED_SVG = `
+    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <path d="M11 5 6 9H2v6h4l5 4z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
+    </svg>`;
+  const UNMUTED_SVG = `
+    <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+      <path d="M11 5 6 9H2v6h4l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" />
+    </svg>`;
+
+  function sync() {
+    if (!video || !btn) return;
+    const on = !video.muted;
+    if (ico) ico.innerHTML = on ? UNMUTED_SVG : MUTED_SVG;
+    btn.setAttribute('aria-pressed', String(on));
+    btn.setAttribute('aria-label', on ? 'Mute campaign video' : 'Unmute campaign video');
+    btn.classList.toggle('is-on', on);
+  }
+
+  btn?.addEventListener('click', () => {
+    if (!video) return;
+    video.muted = !video.muted;
+    // Autoplay starts muted; resuming playback on unmute keeps audio in sync.
+    if (!video.muted) void video.play().catch(() => {});
+    sync();
+  });
+
+  sync();
+</script>

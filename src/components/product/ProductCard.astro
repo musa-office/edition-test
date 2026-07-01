@@ -1,0 +1,112 @@
+---
+// ============================================================
+//  ProductCard — editorial product tile (server-rendered).
+//  The media + info link to the PDP; the heart toggles the
+//  localStorage wishlist (handled by a global delegated script).
+// ============================================================
+import type { ProductCard } from '~/lib/shopify/types';
+import { formatMoney, isOnSale, discountPercent } from '~/lib/utils';
+
+interface Props {
+  product: ProductCard;
+  eager?: boolean;
+}
+
+const { product, eager = false } = Astro.props;
+
+const price = product.priceRange.minVariantPrice;
+const compareAt = product.compareAtPriceRange?.minVariantPrice ?? null;
+const onSale = isOnSale(price, compareAt);
+const off = discountPercent(price, compareAt);
+const img = product.featuredImage;
+const soldOut = !product.availableForSale;
+const href = `/products/${product.handle}`;
+const priceLabel = formatMoney(price.amount, price.currencyCode);
+---
+
+<div
+  class="product"
+  data-wish-handle={product.handle}
+  data-wish-title={product.title}
+  data-wish-image={img?.url ?? ''}
+  data-wish-price={priceLabel}
+  data-wish-vendor={product.vendor ?? ''}
+>
+  <div class="product-media">
+    <span class="product-badges">
+      {soldOut && <span class="badge soldout">Sold out</span>}
+      {!soldOut && onSale && <span class="badge sale">{off != null ? `−${off}%` : 'Sale'}</span>}
+    </span>
+    <button class="wish-btn" type="button" data-wish-toggle aria-label={`Add ${product.title} to wishlist`}>
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+    </button>
+    {
+      img ? (
+        <img src={img.url} alt={img.altText ?? product.title} loading={eager ? 'eager' : 'lazy'} width={img.width ?? undefined} height={img.height ?? undefined} />
+      ) : (
+        <div class="pdp-noimg">No image</div>
+      )
+    }
+    <a class="pm-link" href={href} aria-label={product.title}></a>
+    <div class="product-actions">
+      {
+        soldOut ? (
+          <span class="add-to-cart-button is-disabled" aria-disabled="true">Sold Out</span>
+        ) : product.variantId ? (
+          <button class="add-to-cart-button" type="button" data-add-cart data-variant-id={product.variantId}>
+            Add to Bag
+          </button>
+        ) : (
+          <a class="add-to-cart-button" href={href}>View Product</a>
+        )
+      }
+    </div>
+  </div>
+  <a class="product-info" href={href}>
+    <div>
+      {product.vendor && <span class="product-cat">{product.vendor}</span>}
+      <h3 class="product-title">{product.title}</h3>
+    </div>
+    <span class="price">
+      {
+        onSale && compareAt ? (
+          <>
+            <del>{formatMoney(compareAt.amount, compareAt.currencyCode)}</del>
+            <ins>{priceLabel}</ins>
+          </>
+        ) : (
+          priceLabel
+        )
+      }
+    </span>
+  </a>
+</div>
+
+<script>
+  // Delegated quick-add: one document listener for every product card.
+  import { addItem } from '~/stores/cart';
+
+  if (!(window as any).__edCardAdd) {
+    (window as any).__edCardAdd = true;
+    document.addEventListener('click', async (e) => {
+      const btn = (e.target as HTMLElement).closest('[data-add-cart]') as HTMLButtonElement | null;
+      if (!btn) return;
+      const id = btn.dataset.variantId;
+      if (!id || btn.disabled) return;
+
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Adding…';
+      await addItem(id, 1);
+      btn.textContent = 'Added ✓';
+      btn.classList.add('added');
+      window.setTimeout(() => {
+        btn.textContent = label || 'Add to Bag';
+        btn.classList.remove('added');
+        btn.disabled = false;
+      }, 1600);
+    });
+  }
+</script>

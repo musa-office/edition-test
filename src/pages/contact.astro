@@ -1,0 +1,324 @@
+---
+// ============================================================
+//  Contact — editorial header band + premium card form (wired to
+//  /api/contact) + info aside + departments + flagship map.
+//  Follows Editorial Website/Contact.html.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { SITE } from '~/config/site';
+
+const SUBJECTS = [
+  'General enquiry',
+  'Order & shipping',
+  'Returns & exchanges',
+  'Product & sizing',
+  'Personal styling',
+  'Press & media',
+  'Wholesale & stockists',
+];
+
+const DEPARTMENTS = [
+  { title: 'Client Care', desc: 'Orders, shipping, returns and anything wardrobe-related.', email: SITE.email },
+  { title: 'Press & Media', desc: 'Editorial requests, imagery, samples and interviews.', email: SITE.email },
+  { title: 'Wholesale', desc: 'Stockist enquiries and partnership opportunities.', email: SITE.email },
+  { title: 'Careers', desc: 'Join the atelier — design, craft and client care roles.', email: SITE.email },
+];
+---
+
+<BaseLayout
+  title="Contact"
+  description="Get in touch with the Édition client care team — we usually reply within 24 hours."
+>
+  <!-- Header band -->
+  <section class="pdp-top">
+    <div class="wrap">
+      <div class="shop-header">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Home</a>
+          <span class="bc-sep">›</span>
+          <span class="bc-current">Contact</span>
+        </nav>
+        <div class="shop-head-row">
+          <div class="shop-head">
+            <span class="shop-eyebrow"><span class="dot"></span>We're Here to Help</span>
+            <h1>Get in Touch</h1>
+            <p>Questions about an order, sizing, or the collection? Our client care team is here — we usually reply within 24 hours.</p>
+          </div>
+          <ul class="shop-trust">
+            <li>
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              Replies within 24 hours
+            </li>
+            <li>
+              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              Real humans, no bots
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="contact">
+    <div class="wrap">
+      <div class="contact-grid">
+        <div class="cf-wrap">
+          <form class="contact-form cf-card" id="contactForm" novalidate>
+            <div class="cf-head">
+              <span class="cf-eyebrow">Get in touch</span>
+              <h2 class="cf-title">Send us a message</h2>
+              <p class="cf-sub">Whether it's a question about an order, a styling note, or a press enquiry — share a little detail and the right person on our team will write back personally.</p>
+              <div class="cf-meta">
+                <span class="cf-chip"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Replies within 24 hours</span>
+                <span class="cf-chip"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Real people, no bots</span>
+                <span class="cf-chip"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>Mon–Fri, 9–6 CET</span>
+              </div>
+            </div>
+
+            <div class="cf-row">
+              <div class="cf-field"><label for="cf-first">First name</label><input id="cf-first" name="firstName" type="text" autocomplete="given-name" data-req placeholder="First" /></div>
+              <div class="cf-field"><label for="cf-last">Last name</label><input id="cf-last" name="lastName" type="text" autocomplete="family-name" data-req placeholder="Last" /></div>
+            </div>
+            <div class="cf-row">
+              <div class="cf-field"><label for="cf-email">Email address</label><input id="cf-email" name="email" type="email" autocomplete="email" data-req placeholder="you@email.com" /></div>
+              <div class="cf-field"><label for="cf-phone">Phone <span class="opt">(optional)</span></label><input id="cf-phone" name="phone" type="tel" autocomplete="tel" placeholder="+880 1234 567890" /></div>
+            </div>
+            <div class="cf-row">
+              <div class="cf-field">
+                <label for="cf-subject">Subject</label>
+                <select id="cf-subject" name="subject" data-req>
+                  <option value="">Select a topic…</option>
+                  {SUBJECTS.map((s) => <option value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div class="cf-field"><label for="cf-order">Order number <span class="opt">(optional)</span></label><input id="cf-order" name="order" type="text" placeholder="#ED-2026-0000" /></div>
+            </div>
+            <div class="cf-field"><label for="cf-message">Message</label><textarea id="cf-message" name="message" data-req placeholder="Tell us how we can help…"></textarea></div>
+
+            <span class="cf-group-label">Preferred reply method</span>
+            <div class="cf-pref">
+              <label class="cf-pref-opt"><input type="radio" name="pref" value="Email" checked /><span>Email</span></label>
+              <label class="cf-pref-opt"><input type="radio" name="pref" value="Phone" /><span>Phone</span></label>
+              <label class="cf-pref-opt"><input type="radio" name="pref" value="Either" /><span>Either</span></label>
+            </div>
+
+            <label class="cf-consent">
+              <input type="checkbox" name="consent" data-req />
+              <p>I agree to {SITE.name} storing the details above so the team can respond to my enquiry. See our <a href="/about">Privacy Policy</a>.</p>
+            </label>
+
+            <div class="cf-foot">
+              <button type="submit" class="cf-send" id="cfSend">Send Message
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+              <span class="cf-note">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                Your details stay private.
+              </span>
+            </div>
+          </form>
+
+          <div class="cf-success" id="cfSuccess" role="status" aria-live="polite">
+            <div class="cf-success-ico"><svg width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg></div>
+            <h3>Message sent — thank you</h3>
+            <p>We've received your note and will reply to your inbox within 24 hours. In the meantime, feel free to keep browsing the SS26 edit.</p>
+            <a href="/products" class="cf-send" style="display:inline-flex;text-decoration:none;">Back to Shop</a>
+          </div>
+        </div>
+
+        <aside class="contact-info">
+          <div class="ci-block">
+            <span class="ci-ico"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 6 10 7 10-7"/></svg></span>
+            <div><span class="ci-label">Email us</span><a class="ci-val" href={`mailto:${SITE.email}`}>{SITE.email}</a></div>
+          </div>
+          <div class="ci-block">
+            <span class="ci-ico"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span>
+            <div><span class="ci-label">Call us</span><a class="ci-val" href="tel:+8801234567890">+880 1234 567890</a><span class="ci-sub">Mon–Fri, 9am–6pm CET</span></div>
+          </div>
+          <div class="ci-block">
+            <span class="ci-ico"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+            <div><span class="ci-label">Visit the atelier</span><span class="ci-val">12 Rue Éditoriale<br />75001 Paris, France</span></div>
+          </div>
+          <div class="ci-block">
+            <span class="ci-ico"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+            <div><span class="ci-label">Boutique hours</span><span class="ci-val">Mon–Sat · 10am–7pm</span><span class="ci-sub">Sunday by appointment</span></div>
+          </div>
+          <div class="ci-social">
+            <span class="ci-label">Follow</span>
+            <div class="ci-social-row">
+              <a href="https://instagram.com" aria-label="Instagram"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
+              <a href="https://pinterest.com" aria-label="Pinterest"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.5 18l3-9M10 13.5a2.5 2.5 0 1 0 .3-4.6"/></svg></a>
+              <a href="https://tiktok.com" aria-label="TikTok"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 4 4V4c.5 1.5 2 3 4 3"/></svg></a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- Departments -->
+  <section class="section dept">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="eyebrow">Direct Lines</span>
+        <h2 class="h-sec">Reach the Right <em>Team</em></h2>
+      </div>
+      <div class="dept-grid reveal d1">
+        {
+          DEPARTMENTS.map((d) => (
+            <div class="dept-card">
+              <h4>{d.title}</h4>
+              <p>{d.desc}</p>
+              <a href={`mailto:${d.email}`}>{d.email}</a>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Visit us · flagship map -->
+  <section class="visit">
+    <div class="wrap">
+      <div class="visit-head reveal">
+        <span class="eyebrow">Visit Us</span>
+        <h2 class="h-sec">The Édition <em>Flagship.</em></h2>
+        <p class="visit-lead">Step inside our Paris flagship — a curated space where the full collection lives, styled by our in-house editors. Walk-ins welcome; private appointments on request.</p>
+      </div>
+      <div class="visit-stage reveal d1">
+        <div class="map-shell">
+          <iframe
+            title="Édition Paris flagship map"
+            src="https://maps.google.com/maps?q=Rue%20Saint-Honor%C3%A9%2075001%20Paris&z=15&ie=UTF8&output=embed"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+        <div class="map-overlay">
+          <div class="store-card">
+            <span class="sc-eyebrow">Édition · Flagship</span>
+            <h3 class="sc-name">Édition Paris</h3>
+            <p class="sc-addr">12 Rue Éditoriale<br />75001 Paris, France</p>
+            <div class="sc-hours">
+              <div class="sc-row"><span>Mon – Fri</span><span>10:00 — 20:00</span></div>
+              <div class="sc-row"><span>Sat – Sun</span><span>11:00 — 18:00</span></div>
+            </div>
+            <div class="sc-status" id="scStatus">
+              <span class="sc-dot"></span><span id="scState">Open now</span>
+              <span class="sc-close" id="scClose"></span>
+            </div>
+            <a class="sc-btn" href="https://www.google.com/maps/dir/?api=1&destination=Rue+Saint-Honor%C3%A9+75001+Paris" target="_blank" rel="noopener">Get directions
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // ── Contact form: validate → POST /api/contact → success card ──
+  const form = document.getElementById('contactForm') as HTMLFormElement | null;
+  const success = document.getElementById('cfSuccess');
+  const sendBtn = document.getElementById('cfSend') as HTMLButtonElement | null;
+
+  function fieldInvalid(el: Element): boolean {
+    if (el instanceof HTMLInputElement && el.type === 'checkbox') return !el.checked;
+    if (
+      el instanceof HTMLInputElement ||
+      el instanceof HTMLSelectElement ||
+      el instanceof HTMLTextAreaElement
+    ) {
+      if (!el.value.trim()) return true;
+      if (el.type === 'email') return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value.trim());
+    }
+    return false;
+  }
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const required = Array.from(form.querySelectorAll('[data-req]'));
+    let firstBad: Element | null = null;
+    required.forEach((el) => {
+      const bad = fieldInvalid(el);
+      const host = el.closest('.cf-consent') ?? el;
+      host.classList.toggle('err', bad);
+      if (bad && !firstBad) firstBad = el;
+    });
+    if (firstBad) {
+      (firstBad as HTMLElement).focus?.();
+      return;
+    }
+
+    const fd = new FormData(form);
+    const get = (k: string) => String(fd.get(k) ?? '').trim();
+    const extras = [
+      get('phone') && `Phone: ${get('phone')}`,
+      get('order') && `Order #: ${get('order')}`,
+      get('pref') && `Preferred reply: ${get('pref')}`,
+    ].filter(Boolean);
+    const payload = {
+      name: `${get('firstName')} ${get('lastName')}`.trim(),
+      email: get('email'),
+      subject: get('subject'),
+      message: [get('message'), extras.join('\n')].filter(Boolean).join('\n\n'),
+    };
+
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Sending…'; }
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const out = await res.json();
+      if (out.ok) {
+        form.style.display = 'none';
+        success?.classList.add('show');
+        success?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        alert(out.error ?? 'Something went wrong. Please try again.');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML =
+          'Send Message <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+      }
+    }
+  });
+
+  // Clear a field's error styling as the user corrects it.
+  form?.addEventListener('input', (e) => {
+    const el = e.target as Element;
+    (el.closest('.cf-consent') ?? el).classList.remove('err');
+  });
+
+  // ── Flagship "open now" status (Mon–Fri 10–20, Sat–Sun 11–18) ──
+  (function flagshipStatus() {
+    const statusEl = document.getElementById('scStatus');
+    const stateEl = document.getElementById('scState');
+    const closeEl = document.getElementById('scClose');
+    if (!statusEl || !stateEl || !closeEl) return;
+    const now = new Date();
+    const day = now.getDay(); // 0 Sun … 6 Sat
+    const weekend = day === 0 || day === 6;
+    const open = weekend ? 11 : 10;
+    const close = weekend ? 18 : 20;
+    const h = now.getHours() + now.getMinutes() / 60;
+    const isOpen = h >= open && h < close;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    if (isOpen) {
+      statusEl.classList.remove('closed');
+      stateEl.textContent = 'Open now';
+      closeEl.textContent = `Closes ${pad(close)}:00`;
+    } else {
+      statusEl.classList.add('closed');
+      stateEl.textContent = 'Closed';
+      closeEl.textContent = `Opens ${pad(open)}:00`;
+    }
+  })();
+</script>

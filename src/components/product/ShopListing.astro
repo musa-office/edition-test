@@ -1,0 +1,302 @@
+---
+// ============================================================
+//  ShopListing — shared PLP body: filter sidebar (categories +
+//  Shopify faceted filters), toolbar (count + sort), product
+//  grid, cursor pagination, empty state.
+//  Sort + facet checkboxes live in one GET form that auto-submits
+//  (and resets the page cursor by design). Category + pager links
+//  navigate normally.
+// ============================================================
+import type { Collection, CollectionFilter, ProductCard, SortOption } from '~/lib/shopify/types';
+import ProductGrid from './ProductGrid.astro';
+
+interface Props {
+  products: ProductCard[];
+  countLabel: string;
+  sortOptions: SortOption[];
+  sortValue: string;
+  sortAction: string;
+  collections?: Collection[];
+  activeHandle?: string | null;
+  filters?: CollectionFilter[];
+  selectedInputs?: string[];
+  prevUrl?: string | null;
+  nextUrl?: string | null;
+  emptyTitle?: string;
+  emptyBody?: string;
+}
+
+const {
+  products,
+  countLabel,
+  sortOptions,
+  sortValue,
+  sortAction,
+  collections = [],
+  activeHandle = null,
+  filters = [],
+  selectedInputs = [],
+  prevUrl = null,
+  nextUrl = null,
+  emptyTitle = 'Nothing here yet',
+  emptyBody = 'No pieces match. Try another category or browse everything.',
+} = Astro.props;
+
+// Only show useful facets (skip empty ones; Shopify often returns price + variant options + availability).
+const facets = filters.filter((f) => f.values.some((v) => v.count > 0));
+const hasFacets = facets.length > 0;
+const selected = new Set(selectedInputs);
+const showPager = Boolean(prevUrl || nextUrl);
+const clearHref = activeHandle ? `/collections/${activeHandle}` : '/products';
+
+// Human label for a selected ProductFilter input — prefer the facet's own
+// label, fall back to parsing the JSON for filters whose facet is hidden.
+const labelForInput = (input: string): string => {
+  for (const f of filters) {
+    const v = f.values.find((vv) => vv.input === input);
+    if (v) return v.label;
+  }
+  try {
+    const o = JSON.parse(input);
+    if (o.variantOption?.value) return o.variantOption.value;
+    if (typeof o.available === 'boolean') return o.available ? 'In stock' : 'Out of stock';
+    if (o.price) return `${o.price.min ?? 0} – ${o.price.max ?? ''}`;
+    if (o.productType) return o.productType;
+    if (o.productVendor) return o.productVendor;
+    if (o.tag) return o.tag;
+  } catch {
+    /* not JSON — fall through */
+  }
+  return 'Filter';
+};
+const activeChips = selectedInputs.map((input) => ({ input, label: labelForInput(input) }));
+---
+
+<button class="filter-toggle" id="filterToggle" type="button" aria-controls="shopSide" aria-expanded="false">
+  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
+  Filters
+  {activeChips.length > 0 && <span class="filter-toggle-count">{activeChips.length}</span>}
+</button>
+
+<!-- Drawer overlay (mobile) — persists across AJAX swaps. -->
+<div class="filter-overlay" id="filterOverlay" data-filter-close></div>
+
+<form class="shop-grid" method="get" action={sortAction} data-shop-form>
+  <!-- Sidebar / mobile drawer -->
+  <aside class="shop-side" id="shopSide">
+    <div class="filter-top">
+      <span class="filter-title">Filters</span>
+      <div class="filter-top-actions">
+        {(hasFacets || sortValue) && <a class="filter-clear" href={clearHref}>Clear</a>}
+        <button class="filter-close" type="button" data-filter-close aria-label="Close filters">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-head"><h4>Category</h4></div>
+      <div class="filter-body">
+        <a class={`f-cat ${!activeHandle ? 'active' : ''}`} href="/products">All pieces</a>
+        {
+          collections.map((c) => (
+            <a class={`f-cat ${activeHandle === c.handle ? 'active' : ''}`} href={`/collections/${c.handle}`}>
+              {c.title}
+            </a>
+          ))
+        }
+      </div>
+    </div>
+
+    {
+      facets.map((facet) => (
+        <div class="filter-group">
+          <div class="filter-head"><h4>{facet.label}</h4></div>
+          <div class="filter-body">
+            {facet.values
+              .filter((v) => v.count > 0)
+              .map((v) => (
+                <label class="f-check">
+                  <input type="checkbox" name="filter" value={v.input} checked={selected.has(v.input)} />
+                  <span class="box" />
+                  {v.label}
+                  <span class="f-count">{v.count}</span>
+                </label>
+              ))}
+          </div>
+        </div>
+      ))
+    }
+
+    <!-- Mobile drawer footer: apply/close. -->
+    <div class="filter-apply-bar">
+      <button class="filter-apply" type="button" data-filter-close>View {countLabel}</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="shop-main">
+    <div class="shop-toolbar">
+      <span class="shop-count">{countLabel}</span>
+      <div class="shop-sort">
+        <label for="shopSort">Sort</label>
+        <select id="shopSort" name="sort">
+          {sortOptions.map((o) => <option value={o.value} selected={o.value === sortValue}>{o.label}</option>)}
+        </select>
+      </div>
+    </div>
+
+    {
+      activeChips.length > 0 && (
+        <div class="active-filters" aria-label="Active filters">
+          <span class="af-label">Filtered by</span>
+          {activeChips.map((c) => (
+            <button type="button" class="filter-chip" data-remove={c.input} aria-label={`Remove filter ${c.label}`}>
+              {c.label}
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          ))}
+          <a class="chip-clear" href={clearHref}>Clear all</a>
+        </div>
+      )
+    }
+
+    {
+      products.length > 0 ? (
+        <>
+          <ProductGrid products={products} eagerCount={3} />
+          {showPager && (
+            <nav class="shop-pager" aria-label="Pagination">
+              <a class="btn-line" href={prevUrl ?? '#'} aria-disabled={!prevUrl}>← Prev</a>
+              <a class="btn-line" href={nextUrl ?? '#'} aria-disabled={!nextUrl}>Next →</a>
+            </nav>
+          )}
+        </>
+      ) : (
+        <div class="shop-empty">
+          <p class="se-title">{emptyTitle}</p>
+          <p>{emptyBody}</p>
+          <a class="btn-primary" href={clearHref}>Clear filters</a>
+        </div>
+      )
+    }
+  </div>
+</form>
+
+<script>
+  // ── AJAX listing: apply sort/facets/pager without a full reload ──
+  const form = document.querySelector('[data-shop-form]') as HTMLFormElement | null;
+
+  // ── Mobile filter drawer ──
+  // Open state lives on <body> (a class) so it survives the AJAX innerHTML
+  // swaps that replace the sidebar node. The overlay + close/apply buttons
+  // all carry data-filter-close.
+  const filterToggle = document.getElementById('filterToggle');
+  const openFilters = () => {
+    document.body.classList.add('filter-open');
+    filterToggle?.setAttribute('aria-expanded', 'true');
+  };
+  const closeFilters = () => {
+    document.body.classList.remove('filter-open');
+    filterToggle?.setAttribute('aria-expanded', 'false');
+  };
+  filterToggle?.addEventListener('click', openFilters);
+  document.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('[data-filter-close]')) closeFilters();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('filter-open')) closeFilters();
+  });
+
+  if (form) {
+    // Build the target URL from the form's current sort + checked facets.
+    // Cursor params (after/before) are intentionally absent → filtering
+    // resets pagination.
+    const buildUrl = () => {
+      const action = form.getAttribute('action') || location.pathname;
+      const params = new URLSearchParams(new FormData(form) as any);
+      const qs = params.toString();
+      return qs ? `${action}?${qs}` : action;
+    };
+
+    let token = 0;
+    async function applyUrl(href: string, push = true, scroll = false) {
+      const mine = ++token;
+      form.classList.add('is-loading');
+      form.setAttribute('aria-busy', 'true');
+      try {
+        const res = await fetch(href, { headers: { 'X-Requested-With': 'fetch' } });
+        const html = await res.text();
+        if (mine !== token) return; // superseded by a newer request
+
+        const fresh = new DOMParser()
+          .parseFromString(html, 'text/html')
+          .querySelector('[data-shop-form]');
+        if (!fresh) {
+          window.location.href = href; // unexpected markup — hard-navigate
+          return;
+        }
+        form.innerHTML = fresh.innerHTML;
+        if (push) history.pushState({ shopAjax: true }, '', href);
+        if (scroll) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {
+        window.location.href = href; // network failure — fall back to nav
+      } finally {
+        if (mine === token) {
+          form.classList.remove('is-loading');
+          form.removeAttribute('aria-busy');
+        }
+      }
+    }
+
+    // Sort select + facet checkboxes.
+    form.addEventListener('change', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.matches('select, input[type="checkbox"]')) applyUrl(buildUrl());
+    });
+
+    // Block native submit (e.g. Enter) — go through AJAX instead.
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      applyUrl(buildUrl());
+    });
+
+    // Active-filter chip → uncheck the matching facet, re-fetch.
+    form.addEventListener('click', (e) => {
+      const chip = (e.target as HTMLElement).closest('[data-remove]');
+      if (!chip || !form.contains(chip)) return;
+      e.preventDefault();
+      const val = chip.getAttribute('data-remove');
+      const box = Array.from(
+        form.querySelectorAll<HTMLInputElement>('input[name="filter"]'),
+      ).find((b) => b.value === val);
+      if (box) box.checked = false;
+      applyUrl(buildUrl());
+    });
+
+    // Pager + Clear links → AJAX. Category links change the route/header,
+    // so let those navigate normally.
+    form.addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest('a');
+      if (!a || !form.contains(a)) return;
+      if (a.classList.contains('f-cat')) return;
+
+      const isPager = a.classList.contains('btn-line');
+      const isClear =
+        a.classList.contains('filter-clear') ||
+        a.classList.contains('chip-clear') ||
+        a.classList.contains('btn-primary');
+      if (!isPager && !isClear) return;
+
+      e.preventDefault();
+      const href = a.getAttribute('href');
+      if (!href || href === '#' || a.getAttribute('aria-disabled') === 'true') return;
+      applyUrl(new URL(href, location.origin).href, true, isPager);
+    });
+
+    // Back/forward through filter states.
+    window.addEventListener('popstate', () => applyUrl(location.href, false));
+  }
+</script>

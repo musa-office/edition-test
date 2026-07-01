@@ -1,0 +1,89 @@
+---
+// ============================================================
+//  MobileNav — full-screen off-canvas menu. Toggled by the
+//  header hamburger (see Header.astro's inline script).
+//  Women/Men expand as accordions exposing the mega-menu links;
+//  the rest are simple links.
+// ============================================================
+import { SITE, MEGA_MENU, MOBILE_NAV } from '~/config/site';
+
+// Simple links = everything in MOBILE_NAV that isn't a mega-menu (Women/Men).
+const megaTitles = new Set(MEGA_MENU.map((m) => m.title));
+const simpleLinks = MOBILE_NAV.filter((i) => !megaTitles.has(i.title));
+---
+
+<div class="mobile-nav" id="mobileNav" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+  <div class="mnav-scroll">
+    <ul class="mnav-list">
+      {
+        MEGA_MENU.map((menu) => (
+          <li class="mnav-item">
+            <button class="mnav-toggle" type="button" aria-expanded="false" data-mnav-toggle>
+              {menu.title}
+              <svg class="mnav-chevron" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <div class="mnav-sub" data-mnav-sub>
+              <div class="mnav-sub-inner">
+                <div class="mnav-cols">
+                  {menu.columns.map((col) => (
+                    <div class="mnav-col">
+                      <span class="mnav-col-head">{col.heading}</span>
+                      {col.links.map((link) => (
+                        <a href={link.href}>
+                          {link.label}
+                          {link.isNew && <span class="mnav-new">New</span>}
+                        </a>
+                      ))}
+                    </div>
+                  ))}
+                  <a class="mnav-feat" href={menu.featured.href}>
+                    <img src={menu.featured.image} alt={menu.featured.name} loading="lazy" />
+                    <span class="mnav-feat-name">
+                      {menu.featured.name}
+                      <span class="mnav-feat-link">View All →</span>
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+      {
+        simpleLinks.map((item) => (
+          <li class="mnav-item">
+            <a class={`mnav-link${item.accent ? ' accent' : ''}`} href={item.href}>
+              {item.title}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div class="mobile-nav-footer">
+    <div class="mnav-foot-links">
+      <a href="/wishlist">Wishlist</a>
+      <span aria-hidden="true">·</span>
+      <a href="/account">Account</a>
+      <span aria-hidden="true">·</span>
+      <a href="/contact">Contact</a>
+    </div>
+    <p class="mnav-foot-meta">{SITE.email} · Free Returns</p>
+    <p class="mnav-foot-meta">{SITE.copyright}</p>
+  </div>
+</div>
+
+<script>
+  // Accordion toggles for the mega-menu items.
+  document.querySelectorAll('[data-mnav-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sub = btn.nextElementSibling as HTMLElement | null;
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+      sub?.classList.toggle('open', !open);
+    });
+  });
+</script>

@@ -1,0 +1,106 @@
+---
+// ============================================================
+//  Hero — dual-image slider (3 slides, video + image), auto-
+//  advancing with a progress bar and prev/next controls.
+// ============================================================
+const slides = [
+  {
+    video: '/videos/Hero%20video%2001%20(Slider%2001).mp4',
+    poster: '/images/Hero%20Image%2002%20(Slider%2001).png',
+    image: '/images/Hero%20Image%2002%20(Slider%2001).png',
+    eyebrow: 'SS26 Collection',
+    title: 'Fluid tailoring made to<em> move with you.</em>',
+    videoFirst: true,
+  },
+  {
+    video: '/videos/Hero%20video%2002%20(Slider%2002).mp4',
+    poster: '/images/Hero%20Image%2002%20(Slider%2002).png',
+    image: '/images/Hero%20Image%2002%20(Slider%2002).png',
+    eyebrow: 'The Movement Edit',
+    title: 'Editorial pieces, dressed<br>with <em>quiet intention.</em>',
+    videoFirst: false,
+  },
+  {
+    video: '/videos/Hero%20video%2003%20(Slider%2003).mp4',
+    poster: '/images/Hero%20Image%2003%20(Slider%2003).png',
+    image: '/images/Hero%20Image%2003%20(Slider%2003).png',
+    eyebrow: 'New Season SS26',
+    title: 'Fashion that moves the<br><em>way you do.</em>',
+    videoFirst: true,
+  },
+];
+---
+
+<section class="hero" id="hero" aria-label="Hero">
+  {
+    slides.map((s, i) => (
+      <div class={`hslide ${i === 0 ? 'active' : ''}`}>
+        {s.videoFirst ? (
+          <>
+            <div class="hslide-img"><video src={s.video} autoplay muted loop playsinline poster={s.poster}></video></div>
+            <div class="hslide-img"><img src={s.image} alt="SS26 look" /></div>
+          </>
+        ) : (
+          <>
+            <div class="hslide-img"><img src={s.image} alt="SS26 look" /></div>
+            <div class="hslide-img"><video src={s.video} autoplay muted loop playsinline poster={s.poster}></video></div>
+          </>
+        )}
+        <div class="hs-content">
+          <span class="hs-eyebrow">{s.eyebrow}</span>
+          <h2 class="hs-h" set:html={s.title} />
+          <a class="btn-primary" href="/products">
+            Shop Now
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+          </a>
+        </div>
+      </div>
+    ))
+  }
+  <span class="hs-mid-line" aria-hidden="true"></span>
+  <div class="hs-controls">
+    <span class="hs-count"><b id="hsCur">01</b> / 0{slides.length}</span>
+    <span class="hs-bar"><span id="hsBar"></span></span>
+    <div class="hs-arrows">
+      <button class="hs-arrow" id="hsPrev" aria-label="Previous slide">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+      </button>
+      <button class="hs-arrow" id="hsNext" aria-label="Next slide">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.hero .hslide'));
+  if (slides.length) {
+    const cur = document.getElementById('hsCur');
+    const bar = document.getElementById('hsBar');
+    let i = 0;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const DURATION = 6000;
+
+    function show(n: number) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+      if (cur) cur.textContent = String(i + 1).padStart(2, '0');
+      if (bar) {
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+        // force reflow then animate
+        void bar.offsetWidth;
+        bar.style.transition = `width ${DURATION}ms linear`;
+        bar.style.width = '100%';
+      }
+    }
+    function next() { show(i + 1); }
+    function prev() { show(i - 1); }
+    function restart() { clearInterval(timer); timer = setInterval(next, DURATION); }
+
+    document.getElementById('hsNext')?.addEventListener('click', () => { next(); restart(); });
+    document.getElementById('hsPrev')?.addEventListener('click', () => { prev(); restart(); });
+    show(0);
+    restart();
+  }
+</script>

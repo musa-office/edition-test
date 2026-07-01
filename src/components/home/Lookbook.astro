@@ -1,0 +1,366 @@
+---
+// ============================================================
+//  Lookbook — "Shop the Look": image hotspots synced to a list
+//  of real products. Each item shows ALL variant options
+//  (e.g. colour + size); selecting across them resolves the
+//  matching variant and adds it straight to the bag.
+// ============================================================
+import type { Product, ProductVariant } from '~/lib/shopify/types';
+import { formatMoney } from '~/lib/utils';
+
+interface Props {
+  products: Product[];
+}
+const { products } = Astro.props;
+
+const LOOK_META = [
+  { tag: 'SS26 · Look 01', kicker: 'Look 01 — The Edit', title: 'The Movement Edit', desc: 'Three pieces styled as one story — fluid layers built to move from studio to street. Tap a marker to shop the piece.', image: '/images/Look%2001.png', spots: [[34, 30], [57, 53], [46, 80]] },
+  { tag: 'SS26 · Look 02', kicker: 'Look 02 — Off Duty', title: 'Soft Structure', desc: 'Relaxed tailoring and easy knitwear — the considered weekend uniform, finished with one quiet statement.', image: '/images/Look%2002.png', spots: [[40, 28], [30, 60], [62, 70]] },
+  { tag: 'SS26 · Look 03', kicker: 'Look 03 — After Hours', title: 'Quiet Evening', desc: 'Evening dressing without the noise — clean lines, a fluid drape, and a palette that lets the cut speak.', image: '/images/Look%2003.png', spots: [[50, 32], [40, 66], [61, 56]] },
+];
+
+const currency = products[0]?.priceRange.minVariantPrice.currencyCode ?? 'USD';
+const per = 3;
+
+/** A product whose only option is the implicit "Default Title". */
+const isDefaultOnly = (p: Product) =>
+  p.options.length === 0 ||
+  (p.options.length === 1 &&
+    p.options[0].name === 'Title' &&
+    p.options[0].optionValues.every((v) => v.name === 'Default Title'));
+
+/** Pick the first in-stock variant, else the first. */
+const defaultVariant = (p: Product): ProductVariant | undefined =>
+  p.variants.find((v) => v.availableForSale) ?? p.variants[0];
+
+// Build looks from real products (wraps if the pool is small).
+const looks = LOOK_META.map((meta, li) => {
+  const items = meta.spots.map((spot, si) => {
+    const p = products.length ? products[(li * per + si) % products.length] : null;
+    if (!p) return { x: spot[0], y: spot[1], product: null, variant: undefined, options: [], selected: {}, variantsJson: '[]', price: 0 };
+
+    const variant = defaultVariant(p);
+    const options = isDefaultOnly(p) ? [] : p.options;
+    const selected: Record<string, string> = {};
+    variant?.selectedOptions.forEach((o) => (selected[o.name] = o.value));
+
+    // Compact variant table the client script resolves selections against.
+    const variantsJson = JSON.stringify(
+      p.variants.map((v) => ({
+        id: v.id,
+        available: v.availableForSale,
+        amount: Number(v.price.amount),
+        options: Object.fromEntries(v.selectedOptions.map((o) => [o.name, o.value])),
+      })),
+    );
+
+    return {
+      x: spot[0],
+      y: spot[1],
+      product: p,
+      variant,
+      options,
+      selected,
+      variantsJson,
+      price: Number(variant?.price.amount ?? p.priceRange.minVariantPrice.amount),
+    };
+  });
+  const total = items.reduce((s, it) => s + it.price, 0);
+  return { ...meta, items, total };
+});
+
+const hasProducts = products.length > 0;
+---
+
+<section class="section look" id="lookbook">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div>
+        <span class="eyebrow">Shop the Look</span>
+        <h2 class="h-sec">Styled as <em>one story</em>.</h2>
+      </div>
+      {hasProducts && (
+        <div class="look-nav">
+          <button class="look-arrow" data-look-prev aria-label="Previous look">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          </button>
+          <span class="look-count"><span data-look-cur>01</span> / 0{looks.length}</span>
+          <button class="look-arrow" data-look-next aria-label="Next look">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+      )}
+    </div>
+
+    <div class="reveal d1" data-lookbook data-currency={currency}>
+      {
+        looks.map((look, li) => (
+          <div class="look-grid look-view" data-look-view={li} style={li === 0 ? '' : 'display:none;'}>
+            <figure class="look-stage">
+              <span class="look-tag">{look.tag}</span>
+              <img src={look.image} alt={`Shop the look — ${look.title}`} loading="lazy" />
+              {look.items.map((it, si) =>
+                it.product ? (
+                  <a
+                    class="lk-spot"
+                    href={`/products/${it.product.handle}`}
+                    style={`left:${it.x}%; top:${it.y}%;`}
+                    data-spot={si}
+                    aria-label={it.product.title}
+                  >
+                    <span class="lk-spot-dot">{si + 1}</span>
+                  </a>
+                ) : null,
+              )}
+            </figure>
+
+            <div class="look-panel">
+              <div class="look-panel-head">
+                <span class="lk-eyebrow">{look.kicker}</span>
+                <h3 class="lk-title">{look.title}</h3>
+                <p class="lk-desc">{look.desc}</p>
+              </div>
+
+              <ul class="look-items">
+                {look.items.map((it, si) =>
+                  it.product ? (
+                    <li class="lk-item" data-item={si}>
+                      <script type="application/json" is:inline data-variants set:html={it.variantsJson} />
+                      <div class="lk-row">
+                        <a class="lk-thumb" href={`/products/${it.product.handle}`} aria-label={it.product.title}>
+                          <span class="lk-idx">{si + 1}</span>
+                          {it.product.featuredImage && (
+                            <img src={it.product.featuredImage.url} alt={it.product.title} loading="lazy" />
+                          )}
+                        </a>
+                        <div class="lk-meta">
+                          {it.product.vendor && <span class="lk-cat">{it.product.vendor}</span>}
+                          <a class="lk-name" href={`/products/${it.product.handle}`}>{it.product.title}</a>
+                        </div>
+                        <div class="lk-right">
+                          <span class="lk-price" data-price data-amount={it.price}>{formatMoney(it.price, currency)}</span>
+                          <button
+                            type="button"
+                            class="lk-add"
+                            data-add
+                            data-variant-id={it.variant?.id ?? ''}
+                            disabled={!it.variant?.availableForSale}
+                          >
+                            {it.variant?.availableForSale ? 'Add' : 'Sold Out'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {it.options.length > 0 && (
+                        <div class="lk-opts" data-opts>
+                          {it.options.map((option) => (
+                            <div class="lk-opt-group" data-opt-group={option.name}>
+                              <span class="lk-opt-label">{option.name}</span>
+                              <div class="lk-opt-vals">
+                                {option.optionValues.map((ov) => (
+                                  <button
+                                    type="button"
+                                    class={`lk-opt${it.selected[option.name] === ov.name ? ' active' : ''}`}
+                                    data-opt={option.name}
+                                    data-value={ov.name}
+                                    aria-pressed={it.selected[option.name] === ov.name ? 'true' : 'false'}
+                                  >
+                                    {ov.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ) : null,
+                )}
+              </ul>
+
+              <div class="look-foot">
+                <div>
+                  <span class="look-total-lbl">The full look</span>
+                  <span class="look-total" data-look-total data-amount={look.total}>{formatMoney(look.total, currency)}</span>
+                </div>
+                <button type="button" class="add-all" data-add-all>Add the Full Look
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { addItem, openCart } from '~/stores/cart';
+  import { formatMoney } from '~/lib/utils';
+
+  interface VariantRow {
+    id: string;
+    available: boolean;
+    amount: number;
+    options: Record<string, string>;
+  }
+
+  const root = document.querySelector('[data-lookbook]');
+  if (root) {
+    const currency = (root as HTMLElement).dataset.currency || 'USD';
+    const views = Array.from(root.querySelectorAll('[data-look-view]'));
+    const cur = document.querySelector('[data-look-cur]');
+    let i = 0;
+
+    function show(n: number) {
+      i = (n + views.length) % views.length;
+      views.forEach((v, idx) => ((v as HTMLElement).style.display = idx === i ? '' : 'none'));
+      if (cur) cur.textContent = String(i + 1).padStart(2, '0');
+    }
+    document.querySelector('[data-look-next]')?.addEventListener('click', () => show(i + 1));
+    document.querySelector('[data-look-prev]')?.addEventListener('click', () => show(i - 1));
+
+    function refreshTotal(panel: Element | null) {
+      if (!panel) return;
+      const prices = Array.from(panel.querySelectorAll('[data-price]'));
+      const sum = prices.reduce((s, el) => s + Number((el as HTMLElement).dataset.amount || 0), 0);
+      const totalEl = panel.querySelector('[data-look-total]') as HTMLElement | null;
+      if (totalEl) totalEl.textContent = formatMoney(sum, currency);
+    }
+
+    views.forEach((view) => {
+      const spots = Array.from(view.querySelectorAll('.lk-spot'));
+      const items = Array.from(view.querySelectorAll('.lk-item'));
+
+      // Hover sync: spot ⇄ list item.
+      const link = (idx: number, on: boolean) => {
+        spots[idx]?.classList.toggle('active', on);
+        items[idx]?.classList.toggle('active', on);
+      };
+      spots.forEach((s, idx) => {
+        s.addEventListener('mouseenter', () => link(idx, true));
+        s.addEventListener('mouseleave', () => link(idx, false));
+      });
+
+      items.forEach((item, idx) => {
+        item.addEventListener('mouseenter', () => link(idx, true));
+        item.addEventListener('mouseleave', () => link(idx, false));
+
+        const panel = item.closest('.look-panel');
+        const priceEl = item.querySelector('[data-price]') as HTMLElement | null;
+        const addBtn = item.querySelector('[data-add]') as HTMLButtonElement | null;
+
+        let variants: VariantRow[] = [];
+        try {
+          variants = JSON.parse(item.querySelector('[data-variants]')?.textContent || '[]');
+        } catch {
+          variants = [];
+        }
+
+        // Current selection, seeded from the pre-marked active pills.
+        const selected: Record<string, string> = {};
+        item.querySelectorAll<HTMLButtonElement>('.lk-opt.active').forEach((b) => {
+          if (b.dataset.opt) selected[b.dataset.opt] = b.dataset.value || '';
+        });
+
+        const optButtons = Array.from(item.querySelectorAll<HTMLButtonElement>('.lk-opt'));
+        const optNames = Array.from(new Set(optButtons.map((b) => b.dataset.opt || '')));
+
+        const matchVariant = (sel: Record<string, string>) =>
+          variants.find((v) => optNames.every((n) => v.options[n] === sel[n]));
+
+        // A value is selectable if some available variant carries it,
+        // holding the *other* currently-selected options fixed.
+        const valuePossible = (name: string, value: string) =>
+          variants.some(
+            (v) =>
+              v.available &&
+              v.options[name] === value &&
+              optNames.every((n) => n === name || v.options[n] === sel(selected, n)),
+          );
+
+        function sel(map: Record<string, string>, n: string) {
+          return map[n];
+        }
+
+        function render() {
+          const variant = matchVariant(selected);
+
+          // Reflect availability + active state on every pill.
+          optButtons.forEach((b) => {
+            const name = b.dataset.opt || '';
+            const value = b.dataset.value || '';
+            const active = selected[name] === value;
+            b.classList.toggle('active', active);
+            b.setAttribute('aria-pressed', active ? 'true' : 'false');
+            const possible = valuePossible(name, value);
+            b.classList.toggle('soldout', !possible && !active);
+          });
+
+          const amount = variant ? variant.amount : Number(priceEl?.dataset.amount || 0);
+          if (priceEl) {
+            priceEl.dataset.amount = String(amount);
+            priceEl.textContent = formatMoney(amount, currency);
+          }
+          if (addBtn) {
+            const ok = !!variant && variant.available;
+            addBtn.dataset.variantId = variant?.id || '';
+            addBtn.disabled = !ok;
+            if (!addBtn.classList.contains('added')) addBtn.textContent = ok ? 'Add' : 'Sold Out';
+          }
+          refreshTotal(panel);
+        }
+
+        optButtons.forEach((b) => {
+          b.addEventListener('click', () => {
+            const name = b.dataset.opt || '';
+            selected[name] = b.dataset.value || '';
+            render();
+          });
+        });
+
+        // Add the resolved variant to the bag.
+        addBtn?.addEventListener('click', async () => {
+          const id = addBtn.dataset.variantId;
+          if (!id || addBtn.disabled) return;
+          addBtn.disabled = true;
+          addBtn.textContent = 'Adding…';
+          await addItem(id, 1);
+          addBtn.textContent = 'Added ✓';
+          addBtn.classList.add('added');
+          window.setTimeout(() => {
+            addBtn.classList.remove('added');
+            render();
+          }, 1600);
+        });
+      });
+
+      // Add every item's selected variant in one go.
+      const panel = view.querySelector('.look-panel');
+      const addAll = view.querySelector('[data-add-all]') as HTMLButtonElement | null;
+      addAll?.addEventListener('click', async () => {
+        const ids = Array.from(
+          panel?.querySelectorAll<HTMLButtonElement>('[data-add]') ?? [],
+        )
+          .filter((b) => !b.disabled && b.dataset.variantId)
+          .map((b) => b.dataset.variantId as string);
+        if (!ids.length) return;
+
+        const label = addAll.innerHTML;
+        addAll.disabled = true;
+        addAll.textContent = 'Adding…';
+        // Add all without opening the drawer each time, then open once.
+        for (const id of ids) await addItem(id, 1, { open: false });
+        openCart();
+        addAll.textContent = 'Added ✓';
+        addAll.classList.add('added');
+        window.setTimeout(() => {
+          addAll.innerHTML = label;
+          addAll.classList.remove('added');
+          addAll.disabled = false;
+        }, 1800);
+      });
+    });
+  }
+</script>

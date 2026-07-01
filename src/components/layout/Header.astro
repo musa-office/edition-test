@@ -1,0 +1,124 @@
+---
+// ============================================================
+//  Header — fixed editorial masthead with hover mega-menus.
+//  Action icons sit OUTSIDE the collapsible link lists so they
+//  stay visible when the nav collapses to the hamburger.
+// ============================================================
+import { SITE, MEGA_MENU, NAV_LEFT_LINKS, NAV_RIGHT_LINKS } from '~/config/site';
+import CartButton from '~/components/react/CartButton.tsx';
+import PredictiveSearch from '~/components/react/PredictiveSearch.tsx';
+
+const { wordmark } = SITE;
+---
+
+<nav class="nav" id="mainNav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <!-- Left: mega-menus + simple links -->
+    <ul class="nav-links left">
+      {
+        MEGA_MENU.map((menu) => (
+          <li class="nav-item has-dropdown">
+            <a href={menu.columns[0]?.links[0]?.href ?? '#'}>
+              {menu.title}
+              <svg class="nav-chevron" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </a>
+            <div class="nav-dropdown">
+              <div class="dropdown-inner">
+                {menu.columns.map((col) => (
+                  <div class="dropdown-col">
+                    <span class="dropdown-heading">{col.heading}</span>
+                    {col.links.map((link) => (
+                      <a href={link.href} class={link.isNew ? 'dd-new' : undefined}>
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                ))}
+                <a class="dropdown-featured" href={menu.featured.href}>
+                  <div class="dd-feat-img">
+                    <img src={menu.featured.image} alt={menu.featured.name} loading="lazy" />
+                  </div>
+                  <span class="dd-feat-name">{menu.featured.name}</span>
+                  <span class="dd-feat-link">
+                    View All
+                    <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+      {NAV_LEFT_LINKS.map((l) => (
+        <li class="nav-item"><a href={l.href}>{l.title}</a></li>
+      ))}
+    </ul>
+
+    <!-- Center masthead -->
+    <a href="/" class="nav-masthead" aria-label={`${SITE.name} home`}>
+      {wordmark.head}<span>{wordmark.accent}</span>{wordmark.tail}
+    </a>
+
+    <!-- Right: simple links + action icons -->
+    <div class="nav-right">
+      <ul class="nav-links right">
+        {NAV_RIGHT_LINKS.map((l) => (
+          <li class="nav-item"><a href={l.href}>{l.title}</a></li>
+        ))}
+      </ul>
+      <div class="nav-actions">
+        <PredictiveSearch client:idle />
+        <a class="nav-icon account-icon" href="/account" aria-label="Account">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </a>
+        <a class="nav-icon" href="/wishlist" aria-label="Wishlist">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          <span class="nav-badge wish-badge" id="wishBadge" style="display:none;">0</span>
+        </a>
+        <CartButton client:load />
+        <button class="nav-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  // Nav scroll shadow + mobile off-canvas toggle.
+  const nav = document.getElementById('mainNav');
+  if (nav) {
+    window.addEventListener(
+      'scroll',
+      () => nav.classList.toggle('scrolled', window.scrollY > 16),
+      { passive: true },
+    );
+  }
+
+  const hamburger = document.getElementById('hamburger');
+  const mobileNav = document.getElementById('mobileNav');
+  let menuOpen = false;
+
+  function setMenu(open: boolean) {
+    menuOpen = open;
+    mobileNav?.classList.toggle('open', open);
+    hamburger?.setAttribute('aria-expanded', String(open));
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  hamburger?.addEventListener('click', () => setMenu(!menuOpen));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menuOpen) setMenu(false);
+  });
+  // Close when a mobile link is tapped.
+  mobileNav?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
+</script>
