@@ -38,3 +38,7 @@ pnpm-debug.log*
 
 # vscode
 .vscode/
+
+# Vercel / Netlify build artifacts
+.vercel/
+.netlify/

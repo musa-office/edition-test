@@ -23,6 +23,11 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:cloudflare": "astro build",
+    "build:node": "astro build",
+    "build:vercel": "astro build",
+    "build:netlify": "astro build",
+    "start:node": "node ./dist/server/entry.mjs",
     "preview": "astro build && wrangler dev",
     "deploy": "astro build && wrangler deploy",
     "astro": "astro",
@@ -32,7 +37,10 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.0",
+    "@astrojs/netlify": "^8.1.1",
+    "@astrojs/node": "^11.0.2",
     "@astrojs/react": "^6.0.0",
+    "@astrojs/vercel": "^11.0.2",
     "@nanostores/react": "^0.8",
     "@tailwindcss/vite": "^4.3.1",
     "astro": "^7.0.5",
