@@ -5,19 +5,15 @@
 // server code (Astro frontmatter + /api routes), so the private
 // token never reaches the browser.
 
-/** Read an env var from build-time inline (dev) or runtime process.env (prod node). */
-function env(key: string): string | undefined {
-  const meta = (import.meta.env as Record<string, string | undefined>)[key];
-  if (meta) return meta;
-  const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
-  return proc?.env?.[key];
-}
+// Secrets are read at request time via getSecret(): Cloudflare Workers exposes
+// them per-request (no process.env, and non-PUBLIC vars aren't inlined). Reading
+// at module top-level would yield undefined on the edge, so resolve lazily.
+import { getSecret } from 'astro:env/server';
 
-const DOMAIN = env('SHOPIFY_SHOP_DOMAIN');
-const VERSION = env('SHOPIFY_API_VERSION') ?? '2026-04';
-const TOKEN = env('SHOPIFY_STOREFRONT_PRIVATE_TOKEN');
-
-const ENDPOINT = `https://${DOMAIN}/api/${VERSION}/graphql.json`;
+const getDomain = () => getSecret('SHOPIFY_SHOP_DOMAIN');
+const getVersion = () => getSecret('SHOPIFY_API_VERSION') ?? '2026-04';
+const getToken = () => getSecret('SHOPIFY_STOREFRONT_PRIVATE_TOKEN');
+const getEndpoint = () => `https://${getDomain()}/api/${getVersion()}/graphql.json`;
 
 export class ShopifyError extends Error {
   status?: number;
@@ -49,7 +45,9 @@ export async function shopifyFetch<T>(
   variables: Record<string, unknown> = {},
   options: ShopifyFetchOptions = {},
 ): Promise<T> {
-  if (!DOMAIN || !TOKEN) {
+  const domain = getDomain();
+  const token = getToken();
+  if (!domain || !token) {
     throw new ShopifyError(
       'Missing Shopify config. Set SHOPIFY_SHOP_DOMAIN and SHOPIFY_STOREFRONT_PRIVATE_TOKEN in .env',
     );
@@ -57,11 +55,11 @@ export async function shopifyFetch<T>(
 
   let res: Response;
   try {
-    res = await fetch(ENDPOINT, {
+    res = await fetch(getEndpoint(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Shopify-Storefront-Private-Token': TOKEN,
+        'Shopify-Storefront-Private-Token': token,
         ...(options.buyerIp ? { 'Shopify-Storefront-Buyer-IP': options.buyerIp } : {}),
       },
       body: JSON.stringify({ query, variables }),
@@ -89,4 +87,14 @@ export async function shopifyFetch<T>(
   return json.data;
 }
 
-export const shopifyConfig = { DOMAIN, VERSION, ENDPOINT };
+export const shopifyConfig = {
+  get DOMAIN() {
+    return getDomain();
+  },
+  get VERSION() {
+    return getVersion();
+  },
+  get ENDPOINT() {
+    return getEndpoint();
+  },
+};

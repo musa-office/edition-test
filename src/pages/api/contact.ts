@@ -4,15 +4,11 @@
 //  set; otherwise logs and returns ok (so the form works in dev).
 // ============================================================
 import type { APIRoute } from 'astro';
+// Secrets resolve per-request via getSecret() — works on both Node and the
+// Cloudflare edge (where non-PUBLIC vars aren't inlined and process.env is absent).
+import { getSecret } from 'astro:env/server';
 
 export const prerender = false;
-
-function env(key: string): string | undefined {
-  const meta = (import.meta.env as Record<string, string | undefined>)[key];
-  if (meta) return meta;
-  const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
-  return proc?.env?.[key];
-}
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -39,9 +35,9 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: false, error: 'Please provide a name, a valid email, and a message.' }, 400);
   }
 
-  const apiKey = env('RESEND_API_KEY');
-  const to = env('CONTACT_TO_EMAIL');
-  const from = env('CONTACT_FROM_EMAIL') ?? 'Édition <onboarding@resend.dev>';
+  const apiKey = getSecret('RESEND_API_KEY');
+  const to = getSecret('CONTACT_TO_EMAIL');
+  const from = getSecret('CONTACT_FROM_EMAIL') ?? 'Édition <onboarding@resend.dev>';
 
   // No provider configured — accept gracefully so the UI works in dev.
   if (!apiKey || !to) {

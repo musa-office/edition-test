@@ -21,7 +21,7 @@ let loggedIn = false;
 let customer: CustomerOverview['customer'] = null;
 let error: string | null = null;
 
-if (isCustomerAccountConfigured) {
+if (isCustomerAccountConfigured()) {
   const client = createCustomerClient(Astro.cookies, getPublicOrigin(Astro.request, Astro.url));
   loggedIn = client.isLoggedIn();
   if (loggedIn) {
@@ -53,7 +53,7 @@ const fmtDate = (iso: string) =>
   <section class="shop">
     <div class="wrap">
       {
-        !isCustomerAccountConfigured ? (
+        !isCustomerAccountConfigured() ? (
           <div class="page-intro">
             <span class="eyebrow">Account</span>
             <h1>Members, <em>soon</em>.</h1>

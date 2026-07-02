@@ -22,7 +22,7 @@
 
 ## Features
 
-- **Astro 6 SSR** (`output: "server"`) with the `@astrojs/node` standalone adapter — the private Storefront token stays on the server and cart cookies work.
+- **Astro 7 SSR** (`output: "server"`) on **Cloudflare Workers** via `@astrojs/cloudflare` — the private Storefront token stays on the server (read per-request with `getSecret()`) and cart cookies work.
 - **Headless Shopify** — Storefront API (`2026-04`) integration in a strictly layered data module (`client` → `graphql` → `services` → `transforms`). Every Shopify call is server-side; the browser only ever talks to same-origin `/api/*` routes.
 - **React 19 islands** — only the interactive parts hydrate (cart drawer, product gallery, variant selector, predictive search, wishlist grid, cart page). Everything else is zero-JS server-rendered HTML.
 - **Cross-island cart** — a framework-agnostic `nanostores` store shared by every island, backed by an httpOnly `cart-id` cookie, self-healing expired carts, and Shopify's hosted checkout.
@@ -106,9 +106,10 @@
 
 | Dependency | Version | Purpose |
 | --- | --- | --- |
-| Astro | ^6.4.7 | SSR framework (`output: "server"`) |
-| @astrojs/node | ^10 | Standalone Node adapter |
-| @astrojs/react | ^4 | React island renderer |
+| Astro | ^7.0.5 | SSR framework (`output: "server"`) |
+| @astrojs/cloudflare | ^14.1.0 | Cloudflare Workers adapter |
+| wrangler | ^4.105.0 | Cloudflare CLI (dev / deploy) |
+| @astrojs/react | ^6.0.0 | React island renderer |
 | React / React DOM | ^19 | Interactive islands |
 | Tailwind CSS | ^4.3.1 | Styling (CSS-configured, no config file) |
 | @tailwindcss/vite | ^4.3.1 | Tailwind v4 Vite plugin |
@@ -288,10 +289,38 @@ tsconfig.json
 
 | Command | Description |
 | --- | --- |
-| `yarn dev` | Start the development server |
-| `yarn build` | Build the production Node server |
-| `yarn preview` | Preview the production build |
-| `yarn astro` | Run Astro CLI commands |
+| `npm run dev` | Start the development server (`astro dev`) |
+| `npm run build` | Build the Cloudflare Worker + static assets to `dist/` |
+| `npm run preview` | Build, then run on the Workers runtime (`wrangler dev`) |
+| `npm run deploy` | Build, then `wrangler deploy` to Cloudflare |
+| `npm run astro` | Run Astro CLI commands |
+
+---
+
+## Deploy (Cloudflare Workers)
+
+Server-rendered on **Cloudflare Workers** via `@astrojs/cloudflare`. `npm run build` outputs the Worker + static assets to `dist/`.
+
+```bash
+npm run deploy      # build + wrangler deploy
+```
+
+Set the **secrets** once per environment (never commit them):
+
+```bash
+npx wrangler secret put SHOPIFY_SHOP_DOMAIN
+npx wrangler secret put SHOPIFY_STOREFRONT_PRIVATE_TOKEN
+# …plus the Customer Account API secrets (CUSTOMER_ACCOUNT_API_CLIENT_ID,
+#    SHOPIFY_SHOP_ID) and RESEND_API_KEY / CONTACT_TO_EMAIL if you use them
+```
+
+Secrets are read at request time via `getSecret()` (defined in `astro.config.mjs` → `env.schema`); Workers exposes them per-request, not as `process.env`. Non-secret pins (`SHOPIFY_API_VERSION`, `CUSTOMER_ACCOUNT_API_VERSION`) live in `wrangler.toml` `[vars]`. Locally, secrets come from `.env` (for `astro dev`) or `.dev.vars` (for `wrangler dev` / `npm run preview`).
+
+> ⚠️ **Version lock:** `astro@7` ⇄ `@astrojs/cloudflare@^14` are mutually tied (the unified Worker entrypoint is version-specific), alongside `@astrojs/react@^6`. Don't bump one without the others.
+>
+> ⚠️ `wrangler.toml` `main` **must** be `@astrojs/cloudflare/entrypoints/server` (the adapter's unified entry) — not the built `dist/_worker.js` path, which doesn't exist before the build.
+
+**Before deploying:** set `name` in `wrangler.toml` to your Worker name, and set all secrets in the target environment (or the Cloudflare dashboard → Workers → Settings → Variables and Secrets).
 
 ---
 

@@ -15,7 +15,7 @@ export const GET: APIRoute = async ({ cookies, url, request, redirect }) => {
   clearTokens(cookies);
 
   // Without an id_token (or config) we can't hit Shopify's logout — just go home.
-  if (!isCustomerAccountConfigured || !tokens?.idToken) {
+  if (!isCustomerAccountConfigured() || !tokens?.idToken) {
     return redirect('/', 302);
   }
 

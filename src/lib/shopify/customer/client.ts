@@ -4,7 +4,7 @@
 // Bound to the current request's cookies. Transparently refreshes the
 // access token when it is about to expire and re-persists the cookies.
 import type { AstroCookies } from 'astro';
-import { GRAPHQL_ENDPOINT } from './config';
+import { getGraphqlEndpoint } from './config';
 import { refreshTokens } from './oauth';
 import { clearTokens, getTokens, setTokens } from './session';
 
@@ -61,7 +61,7 @@ export function createCustomerClient(cookies: AstroCookies, origin: string): Cus
     async query<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
       const accessToken = await validAccessToken();
 
-      const res = await fetch(GRAPHQL_ENDPOINT, {
+      const res = await fetch(getGraphqlEndpoint(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

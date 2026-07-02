@@ -12,24 +12,21 @@
 //   3. Register the callback URL  <origin>/account/authorize  and the
 //      logout URL  <origin>/account  in the API's settings.
 
-/** Read an env var from build-time inline (dev) or runtime process.env (prod node). */
-function env(key: string): string | undefined {
-  const meta = (import.meta.env as Record<string, string | undefined>)[key];
-  if (meta) return meta;
-  const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
-  return proc?.env?.[key];
-}
+// Secrets resolve per-request via getSecret() (Cloudflare Workers exposes them
+// at request time, not as process.env). Everything env-derived is a function so
+// nothing is read at module load, where it would be undefined on the edge.
+import { getSecret } from 'astro:env/server';
 
-export const CLIENT_ID = env('CUSTOMER_ACCOUNT_API_CLIENT_ID');
-export const SHOP_ID = env('SHOPIFY_SHOP_ID');
-export const API_VERSION = env('CUSTOMER_ACCOUNT_API_VERSION') ?? '2025-01';
+export const getClientId = () => getSecret('CUSTOMER_ACCOUNT_API_CLIENT_ID');
+export const getShopId = () => getSecret('SHOPIFY_SHOP_ID');
+export const getApiVersion = () => getSecret('CUSTOMER_ACCOUNT_API_VERSION') ?? '2025-01';
 
 /** True only when the customer-account env vars are present. */
-export const isCustomerAccountConfigured = Boolean(CLIENT_ID && SHOP_ID);
+export const isCustomerAccountConfigured = () => Boolean(getClientId() && getShopId());
 
 /** Throw a clear, actionable error if someone hits an auth route unconfigured. */
 export function assertConfigured(): void {
-  if (!isCustomerAccountConfigured) {
+  if (!isCustomerAccountConfigured()) {
     throw new Error(
       'Customer Account API is not configured. Set CUSTOMER_ACCOUNT_API_CLIENT_ID ' +
         'and SHOPIFY_SHOP_ID in .env (see .env.example).',
@@ -38,10 +35,13 @@ export function assertConfigured(): void {
 }
 
 // --- Canonical OAuth + GraphQL endpoints (shop_id based) ------------
-export const AUTHORIZE_ENDPOINT = `https://shopify.com/authentication/${SHOP_ID}/oauth/authorize`;
-export const TOKEN_ENDPOINT = `https://shopify.com/authentication/${SHOP_ID}/oauth/token`;
-export const LOGOUT_ENDPOINT = `https://shopify.com/authentication/${SHOP_ID}/logout`;
-export const GRAPHQL_ENDPOINT = `https://shopify.com/${SHOP_ID}/account/customer/api/${API_VERSION}/graphql`;
+export const getAuthorizeEndpoint = () =>
+  `https://shopify.com/authentication/${getShopId()}/oauth/authorize`;
+export const getTokenEndpoint = () =>
+  `https://shopify.com/authentication/${getShopId()}/oauth/token`;
+export const getLogoutEndpoint = () => `https://shopify.com/authentication/${getShopId()}/logout`;
+export const getGraphqlEndpoint = () =>
+  `https://shopify.com/${getShopId()}/account/customer/api/${getApiVersion()}/graphql`;
 
 // OAuth scopes. `customer-account-api:full` grants the GraphQL API access;
 // openid + email are needed for the id_token used at logout.

@@ -10,11 +10,11 @@
 // grant with `unsupported_grant_type`.) Refresh just repeats authorization
 // with the refresh_token grant.
 import {
-  AUTHORIZE_ENDPOINT,
-  CLIENT_ID,
-  LOGOUT_ENDPOINT,
+  getAuthorizeEndpoint,
+  getClientId,
+  getLogoutEndpoint,
   SCOPES,
-  TOKEN_ENDPOINT,
+  getTokenEndpoint,
 } from './config';
 import type { CustomerTokens } from './session';
 
@@ -25,8 +25,8 @@ export function buildAuthorizeUrl(params: {
   nonce: string;
   codeChallenge: string;
 }): string {
-  const url = new URL(AUTHORIZE_ENDPOINT);
-  url.searchParams.set('client_id', CLIENT_ID!);
+  const url = new URL(getAuthorizeEndpoint());
+  url.searchParams.set('client_id', getClientId()!);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('redirect_uri', params.redirectUri);
   url.searchParams.set('scope', SCOPES);
@@ -47,7 +47,7 @@ interface TokenResponse {
 }
 
 async function postToken(origin: string, body: Record<string, string>): Promise<TokenResponse> {
-  const res = await fetch(TOKEN_ENDPOINT, {
+  const res = await fetch(getTokenEndpoint(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -77,7 +77,7 @@ export async function exchangeCodeForTokens(args: {
 }): Promise<CustomerTokens> {
   const oauth = await postToken(args.origin, {
     grant_type: 'authorization_code',
-    client_id: CLIENT_ID!,
+    client_id: getClientId()!,
     redirect_uri: args.redirectUri,
     code: args.code,
     code_verifier: args.codeVerifier,
@@ -99,7 +99,7 @@ export async function refreshTokens(args: {
 }): Promise<CustomerTokens> {
   const oauth = await postToken(args.origin, {
     grant_type: 'refresh_token',
-    client_id: CLIENT_ID!,
+    client_id: getClientId()!,
     refresh_token: args.refreshToken,
   });
 
@@ -114,7 +114,7 @@ export async function refreshTokens(args: {
 
 /** Build the Shopify logout URL that ends the session and returns home. */
 export function buildLogoutUrl(args: { idToken?: string; postLogoutRedirectUri: string }): string {
-  const url = new URL(LOGOUT_ENDPOINT);
+  const url = new URL(getLogoutEndpoint());
   if (args.idToken) url.searchParams.set('id_token_hint', args.idToken);
   url.searchParams.set('post_logout_redirect_uri', args.postLogoutRedirectUri);
   return url.toString();
