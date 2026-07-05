@@ -2,8 +2,8 @@
 // ============================================================
 //  BestSellers — section head + horizontal product rail (live).
 // ============================================================
-import type { ProductCard } from '~/lib/shopify/types';
-import ProductCardComp from '~/components/product/ProductCard.astro';
+import type { ProductCard } from "~/lib/shopify/types";
+import ProductCardComp from "~/components/product/ProductCard.astro";
 
 interface Props {
   products: ProductCard[];
@@ -11,6 +11,7 @@ interface Props {
 const { products } = Astro.props;
 ---
 
+<h1>test</h1>
 <section class="section">
   <div class="wrap">
     <div class="sec-head reveal">
@@ -19,11 +20,29 @@ const { products } = Astro.props;
         <h2 class="h-sec">Best <em>Sellers</em></h2>
       </div>
       <div class="rail-nav">
-        <button class="rail-arrow" data-rail-prev aria-label="Previous products">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+        <button
+          class="rail-arrow"
+          data-rail-prev
+          aria-label="Previous products"
+        >
+          <svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg
+          >
         </button>
         <button class="rail-arrow" data-rail-next aria-label="Next products">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+          <svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"></path></svg
+          >
         </button>
       </div>
     </div>
@@ -35,8 +54,16 @@ const { products } = Astro.props;
 </section>
 
 <script>
-  const rail = document.querySelector('[data-rail]') as HTMLElement | null;
+  const rail = document.querySelector("[data-rail]") as HTMLElement | null;
   const step = () => Math.min(rail?.clientWidth ?? 320, 360);
-  document.querySelector('[data-rail-prev]')?.addEventListener('click', () => rail?.scrollBy({ left: -step(), behavior: 'smooth' }));
-  document.querySelector('[data-rail-next]')?.addEventListener('click', () => rail?.scrollBy({ left: step(), behavior: 'smooth' }));
+  document
+    .querySelector("[data-rail-prev]")
+    ?.addEventListener("click", () =>
+      rail?.scrollBy({ left: -step(), behavior: "smooth" }),
+    );
+  document
+    .querySelector("[data-rail-next]")
+    ?.addEventListener("click", () =>
+      rail?.scrollBy({ left: step(), behavior: "smooth" }),
+    );
 </script>
