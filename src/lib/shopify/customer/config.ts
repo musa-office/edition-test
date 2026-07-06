@@ -17,9 +17,16 @@
 // nothing is read at module load, where it would be undefined on the edge.
 import { getSecret } from 'astro:env/server';
 
-export const getClientId = () => getSecret('CUSTOMER_ACCOUNT_API_CLIENT_ID');
-export const getShopId = () => getSecret('SHOPIFY_SHOP_ID');
-export const getApiVersion = () => getSecret('CUSTOMER_ACCOUNT_API_VERSION') ?? '2025-01';
+// Trim every secret: on Cloudflare/Vercel/Netlify these come from the host's
+// secret store (the .env file is NOT deployed), and a value piped in via
+// `echo … | wrangler secret put` keeps a trailing newline. An unnoticed "\n"
+// or stray space in SHOP_ID/version corrupts the endpoint URL into
+// `shopify.com/63868797087%0A/…`, which Shopify answers with a 301→HTML page —
+// and parsing that HTML as JSON is what produced "Unexpected token '<'".
+export const getClientId = () => getSecret('CUSTOMER_ACCOUNT_API_CLIENT_ID')?.trim();
+export const getShopId = () => getSecret('SHOPIFY_SHOP_ID')?.trim();
+// `|| ` (not `??`) so an empty-string secret also falls back to the default.
+export const getApiVersion = () => getSecret('CUSTOMER_ACCOUNT_API_VERSION')?.trim() || '2025-01';
 
 /** True only when the customer-account env vars are present. */
 export const isCustomerAccountConfigured = () => Boolean(getClientId() && getShopId());
@@ -40,8 +47,19 @@ export const getAuthorizeEndpoint = () =>
 export const getTokenEndpoint = () =>
   `https://shopify.com/authentication/${getShopId()}/oauth/token`;
 export const getLogoutEndpoint = () => `https://shopify.com/authentication/${getShopId()}/logout`;
-export const getGraphqlEndpoint = () =>
-  `https://shopify.com/${getShopId()}/account/customer/api/${getApiVersion()}/graphql`;
+export const getGraphqlEndpoint = () => {
+  const shopId = getShopId();
+  // Never build `shopify.com/undefined/…` — that redirects to an HTML page and
+  // breaks JSON parsing downstream. Fail loudly with an actionable message.
+  if (!shopId) {
+    throw new Error(
+      'Cannot build the Customer Account API endpoint: SHOPIFY_SHOP_ID is missing at ' +
+        'runtime. On Cloudflare/Vercel/Netlify the .env file is not deployed — set it as ' +
+        'a host secret (e.g. `wrangler secret put SHOPIFY_SHOP_ID`).',
+    );
+  }
+  return `https://shopify.com/${shopId}/account/customer/api/${getApiVersion()}/graphql`;
+};
 
 // OAuth scopes. `customer-account-api:full` grants the GraphQL API access;
 // openid + email are needed for the id_token used at logout.

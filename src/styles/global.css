@@ -891,6 +891,25 @@ body::before {
 }
 .cart-checkout-btn:hover { background: var(--editorial-primary-hover); }
 .cart-checkout-btn:disabled { opacity: 0.6; cursor: default; }
+.cart-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 15px 32px;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-soft);
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+  margin-bottom: 12px;
+}
+.cart-view-btn:hover { background: var(--ink); color: #fff; }
 .cart-continue-link {
   display: block;
   text-align: center;

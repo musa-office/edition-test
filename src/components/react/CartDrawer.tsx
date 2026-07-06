@@ -131,9 +131,9 @@ export default function CartDrawer() {
                   </svg>
                 )}
               </button>
-              <button type="button" className="cart-continue-link" onClick={closeCart}>
-                Continue Shopping
-              </button>
+              <a href="/cart" className="cart-view-btn" onClick={closeCart}>
+                View Cart
+              </a>
             </div>
           </>
         )}

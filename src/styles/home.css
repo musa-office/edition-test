@@ -561,101 +561,71 @@
       color: #fff;
     }
 
-    /* ─── FEATURED CATEGORIES — EXPANDING EDITORIAL SHOWCASE ─── */
+    /* ─── FEATURED CATEGORIES — EDITORIAL 4-CARD GRID ─── */
+    #categories.section {
+      padding-top: 0;
+    }
+
     .showcase {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(14px, 1.6vw, 22px);
       width: 100%;
-      height: clamp(540px, 72vh, 760px);
-      margin-top: 0;
-      background: var(--editorial-dark);
-      overflow: hidden;
     }
 
     .sc-panel {
       position: relative;
-      flex: 1 1 0;
+      height: clamp(440px, 42vw, 560px);
       min-width: 0;
       overflow: hidden;
+      cursor: pointer;
       text-decoration: none;
-      transition: flex-grow 0.75s var(--ease);
-    }
-
-    .sc-panel + .sc-panel {
-      box-shadow: -1px 0 0 rgba(255, 255, 255, 0.1);
-    }
-
-    /* Default: the first panel is featured (expanded). On hover anywhere
-       in the row, the hovered panel becomes featured instead. */
-    .sc-panel:first-child {
-      flex-grow: 2.5;
-    }
-
-    .showcase:hover .sc-panel {
-      flex-grow: 1;
-    }
-
-    .showcase:hover .sc-panel:hover {
-      flex-grow: 2.5;
+      border-radius: var(--r-card);
     }
 
     .sc-panel-bg {
       position: absolute;
       inset: 0;
-      z-index: 0;
     }
 
     .sc-panel-bg img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 1.2s var(--ease);
+      transition: transform 1s var(--ease);
     }
 
     .sc-panel:hover .sc-panel-bg img {
-      transform: scale(1.06);
+      transform: scale(1.07);
     }
 
-    /* Legibility gradient — heaviest at the bottom where the text sits. */
     .sc-panel::after {
       content: '';
       position: absolute;
       inset: 0;
-      z-index: 1;
-      background: linear-gradient(180deg, rgba(16, 24, 32, 0.12) 0%, rgba(16, 24, 32, 0.04) 36%, rgba(16, 24, 32, 0.74) 100%);
-      transition: background 0.5s var(--ease);
+      background: linear-gradient(180deg, rgba(16, 24, 32, 0.52), rgba(16, 24, 32, 0.68));
+      transition: background 0.45s var(--ease);
     }
 
-    .sc-index {
-      position: absolute;
-      top: clamp(16px, 1.6vw, 26px);
-      right: clamp(18px, 1.6vw, 28px);
-      z-index: 2;
-      font-family: var(--serif);
-      font-style: italic;
-      font-size: clamp(38px, 3.6vw, 60px);
-      font-weight: 500;
-      line-height: 1;
-      color: rgba(255, 255, 255, 0.18);
-      transition: color 0.5s var(--ease);
-    }
-
-    .sc-panel:first-child .sc-index,
-    .showcase:hover .sc-panel:hover .sc-index {
-      color: rgba(255, 255, 255, 0.3);
-    }
-
-    .showcase:hover .sc-panel:first-child .sc-index {
-      color: rgba(255, 255, 255, 0.18);
+    .sc-panel:hover::after {
+      background: linear-gradient(180deg, rgba(16, 24, 32, 0.30), rgba(16, 24, 32, 0.5));
     }
 
     .sc-content {
       position: absolute;
       left: 0;
       right: 0;
-      bottom: 0;
-      z-index: 2;
-      padding: clamp(22px, 2vw, 38px);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 3;
+      padding: 0 clamp(18px, 2vw, 34px);
+      text-align: center;
       color: #fff;
+      transition: transform 0.6s var(--ease);
+    }
+
+    .sc-panel:hover .sc-content {
+      transform: translateY(calc(-50% - 90px));
     }
 
     .sc-cat {
@@ -666,101 +636,79 @@
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--editorial-secondary);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .sc-title {
       font-family: var(--serif);
-      font-size: clamp(22px, 1.9vw, 33px);
+      font-size: clamp(24px, 1.9vw, 34px);
       font-weight: 600;
-      line-height: 1.1;
+      line-height: 1.12;
       letter-spacing: -0.4px;
-    }
-
-    /* Description + CTA appear only on the featured (expanded) panel. */
-    .sc-desc,
-    .sc-cta {
-      opacity: 0;
-      transform: translateY(12px);
-      transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
     }
 
     .sc-desc {
       font-family: var(--sans);
-      font-size: 13.5px;
-      line-height: 1.62;
-      color: rgba(247, 250, 251, 0.85);
-      max-width: 380px;
-      margin-top: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(247, 250, 251, 0.82);
+      max-width: 300px;
+      margin: 14px auto 0;
     }
 
-    .sc-cta {
-      display: inline-flex;
+    /* Circular jump-arrow — revealed below the content on hover. */
+    .sc-arrow {
+      position: absolute;
+      left: 50%;
+      top: calc(50% + 60px);
+      width: 64px;
+      height: 64px;
+      display: flex;
       align-items: center;
-      gap: 9px;
-      margin-top: 22px;
-      font-family: var(--sans);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      color: #fff;
-    }
-
-    .sc-cta svg {
-      transition: transform 0.3s var(--ease);
-    }
-
-    .sc-panel:hover .sc-cta svg {
-      transform: translate(3px, -3px);
-    }
-
-    .sc-panel:first-child .sc-desc,
-    .sc-panel:first-child .sc-cta {
-      opacity: 1;
-      transform: none;
-      transition-delay: 0.18s;
-    }
-
-    .showcase:hover .sc-panel .sc-desc,
-    .showcase:hover .sc-panel .sc-cta {
+      justify-content: center;
+      border-radius: 50%;
+      background: #fff;
+      color: var(--editorial-dark);
+      z-index: 5;
       opacity: 0;
-      transform: translateY(12px);
-      transition-delay: 0s;
+      transform: translate(-50%, -50%) scale(0.82);
+      transition: opacity 0.45s var(--ease), transform 0.45s var(--ease), background 0.25s, color 0.25s;
     }
 
-    .showcase:hover .sc-panel:hover .sc-desc,
-    .showcase:hover .sc-panel:hover .sc-cta {
+    .sc-panel:hover .sc-arrow {
       opacity: 1;
-      transform: none;
-      transition-delay: 0.18s;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .sc-arrow:hover {
+      background: var(--primary);
+      color: #fff;
     }
 
     @media (max-width: 900px) {
       .showcase {
-        flex-direction: column;
-        height: auto;
+        grid-template-columns: repeat(2, 1fr);
       }
 
-      .sc-panel,
-      .sc-panel:first-child,
-      .showcase:hover .sc-panel,
-      .showcase:hover .sc-panel:hover {
-        flex: none;
-        height: 300px;
+      .sc-panel {
+        height: 340px;
       }
 
-      .sc-panel + .sc-panel {
-        box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.1);
+      .sc-panel:hover .sc-content {
+        transform: translateY(-50%);
       }
 
-      /* Always reveal description + CTA on stacked mobile panels. */
-      .sc-desc,
-      .sc-cta,
-      .showcase:hover .sc-panel .sc-desc,
-      .showcase:hover .sc-panel .sc-cta {
+      .sc-arrow {
         opacity: 1;
-        transform: none;
+        top: auto;
+        bottom: 26px;
+        transform: translateX(-50%) scale(1);
+      }
+    }
+
+    @media (max-width: 520px) {
+      .showcase {
+        grid-template-columns: 1fr;
       }
     }
 

@@ -229,6 +229,39 @@ a.ci-val:hover { color: var(--primary); }
 .account-empty { font-size: 15px; color: var(--gray); }
 @media (max-width: 760px) { .account-grid { grid-template-columns: 1fr; } }
 
+/* Clickable order rows in the account list */
+.account-orders li { padding: 0; }
+.order-row { display: flex; width: 100%; align-items: center; gap: 16px; padding: 16px 0; text-decoration: none; color: inherit; transition: opacity 0.2s; }
+.order-row > div:first-child { flex: 1; min-width: 0; }
+.order-row:hover { opacity: 0.62; }
+.order-chevron { flex-shrink: 0; color: var(--editorial-text-muted); transition: transform 0.2s; }
+.order-row:hover .order-chevron { transform: translateX(3px); }
+
+/* Order detail page */
+.order-back { display: inline-flex; margin-bottom: 18px; }
+.order-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
+.order-status { display: inline-flex; align-items: center; font-family: var(--sans); font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--editorial-primary-hover); background: var(--editorial-surface-cool); border-radius: 999px; padding: 5px 12px; }
+.order-detail-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; margin-top: 8px; }
+.order-items { list-style: none; display: flex; flex-direction: column; }
+.order-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--editorial-border); }
+.order-item:last-child { border-bottom: none; }
+.order-item-img { position: relative; width: 60px; height: 72px; flex-shrink: 0; border-radius: var(--r-soft); background: var(--editorial-surface-cool); border: 1px solid var(--editorial-border); }
+.order-item-img img { width: 100%; height: 100%; object-fit: cover; }
+.order-item-qty { position: absolute; top: -8px; right: -8px; min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 5px; border-radius: 999px; background: var(--ink); color: #fff; font-family: var(--sans); font-size: 11px; font-weight: 700; }
+.order-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.order-item-title { font-size: 15px; font-weight: 600; color: var(--ink); }
+.order-item-variant { font-size: 13px; color: var(--editorial-text-muted); }
+.order-item-price { font-weight: 700; color: var(--ink); white-space: nowrap; }
+.order-summary { position: sticky; top: calc(var(--nav-h) + 20px); }
+.order-totals { display: grid; gap: 12px; }
+.order-totals > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.order-totals dt { font-size: 14px; color: var(--gray); }
+.order-totals dd { font-size: 14px; color: var(--ink); font-weight: 500; }
+.order-totals-grand { padding-top: 12px; margin-top: 2px; border-top: 1px solid var(--editorial-border); }
+.order-totals-grand dt { font-family: var(--sans); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ink); }
+.order-totals-grand dd { font-size: 18px; font-weight: 700; }
+@media (max-width: 760px) { .order-detail-grid { grid-template-columns: 1fr; } .order-summary { position: static; } }
+
 /* ─── Journal index (blog) ────────────────────────────────────── */
 .jx { padding: clamp(20px, 2.5vw, 40px) 0 clamp(56px, 6vw, 88px); }
 

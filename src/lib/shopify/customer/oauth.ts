@@ -2,13 +2,14 @@
 //  Customer Account API — OAuth orchestration
 // ============================================================
 // This is a PUBLIC client (PKCE, no client secret) registered via the
-// Customer Account API "Application setup". For that client type the
-// `authorization_code` token response already returns an access token that
-// is used directly as the GraphQL Authorization header — there is NO second
-// token-exchange step. (The token-exchange/audience dance is Hydrogen-only:
-// its audience is Hydrogen's own client ID, so this client rejects that
-// grant with `unsupported_grant_type`.) Refresh just repeats authorization
-// with the refresh_token grant.
+// Customer Account API "Application setup". The `authorization_code` grant
+// returns an access token that is used DIRECTLY as the GraphQL Authorization
+// header — there is NO second token-exchange step (public clients reject that
+// grant with `unsupported_grant_type`; the exchange is Hydrogen/confidential
+// only). Because it's a public client, EVERY request — the token endpoint AND
+// the GraphQL API — must carry the Origin header so Shopify can validate it
+// against the registered JavaScript origin; without it a valid token is
+// 403-Forbidden. Refresh just repeats authorization with the refresh_token grant.
 import {
   getAuthorizeEndpoint,
   getClientId,

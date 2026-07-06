@@ -1,34 +1,44 @@
 ---
 // ============================================================
-//  FeaturedShowcase — expanding editorial category panels.
+//  FeaturedShowcase — "Explore the Edit" featured categories.
+//  A centered section header over a 4-card editorial grid
+//  (mirrors Editorial Website / Editorial Homepage.html).
 //  Links route to collection PLPs (handles can be remapped to
 //  your real Shopify collections in src/config).
 // ============================================================
 const panels = [
   { href: '/collections/women-s-fashion', img: '/images/Category%20Image%2001.png', cat: 'Collection 01', title: 'Quiet Elegance', desc: 'Fluid tailoring and soft structure — womenswear made to move with you.' },
   { href: '/collections/mens-fashion', img: '/images/Category%20Image%2002.png', cat: 'Collection 02', title: 'Modern Tailoring', desc: 'Considered menswear with a relaxed, editorial ease and lasting craft.' },
-  { href: '/collections/kid-s-fashion', img: '/images/Category%20Image%2003.png', cat: 'Collection 03', title: 'The Little Edit', desc: "Soft, durable and playful — kidswear made for movement and mess." },
+  { href: '/collections/kid-s-fashion', img: '/images/Category%20Image%2003.png', cat: 'Collection 03', title: 'The Little Edit', desc: 'Soft, durable and playful — kidswear made for movement and mess.' },
   { href: '/collections/top-sale-s', img: '/images/Category%20Image%2004.png', cat: 'Collection 04', title: 'Final Reductions', desc: 'Editorial pieces at their best price — the season, marked down.' },
-  { href: '/collections/new-arrivals', img: '/images/Category%20Image%2005.png', cat: 'Just In', title: 'New Arrivals', desc: 'The latest editorial drop — fresh forms, new colour, ready to shop.' },
 ];
 ---
 
-<section class="showcase" id="categories" aria-label="Shop by category">
-  {
-    panels.map((p, i) => (
-      <a class="sc-panel" href={p.href}>
-        <div class="sc-panel-bg"><img src={p.img} alt={p.title} /></div>
-        <span class="sc-index" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-        <div class="sc-content">
-          <span class="sc-cat">{p.cat}</span>
-          <h3 class="sc-title">{p.title}</h3>
-          <p class="sc-desc">{p.desc}</p>
-          <span class="sc-cta">
-            Discover
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10" /></svg>
-          </span>
-        </div>
-      </a>
-    ))
-  }
+<section class="section" id="categories" aria-label="Shop by category">
+  <div class="wrap">
+    <div class="sec-head center" style="margin-bottom: clamp(40px, 4vw, 56px);">
+      <div>
+        <span class="eyebrow center">Shop by Category</span>
+        <h2 class="h-sec">Explore the <em>Edit</em></h2>
+      </div>
+    </div>
+
+    <div class="showcase">
+      {
+        panels.map((p) => (
+          <a class="sc-panel" href={p.href}>
+            <div class="sc-panel-bg"><img src={p.img} alt={p.title} /></div>
+            <div class="sc-content">
+              <span class="sc-cat">{p.cat}</span>
+              <h3 class="sc-title">{p.title}</h3>
+              <p class="sc-desc">{p.desc}</p>
+            </div>
+            <span class="sc-arrow" aria-hidden="true">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10" /></svg>
+            </span>
+          </a>
+        ))
+      }
+    </div>
+  </div>
 </section>

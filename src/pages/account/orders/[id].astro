@@ -1,0 +1,144 @@
+---
+// ============================================================
+//  /account/orders/[id] — a single order's details. Only the
+//  authenticated customer's own orders are visible (the API
+//  scopes `order(id:)` to the session), so a guessed id 404s.
+// ============================================================
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import {
+  createCustomerClient,
+  ORDER_DETAIL_QUERY,
+  getPublicOrigin,
+  isCustomerAccountConfigured,
+  NotAuthenticatedError,
+} from '~/lib/shopify/customer';
+import type { OrderDetailResult, Money } from '~/lib/shopify/customer';
+
+export const prerender = false;
+
+// The list links with the numeric id; rebuild the full GID for the API.
+const { id } = Astro.params;
+const gid = `gid://shopify/Order/${id}`;
+
+let loggedIn = false;
+let order: OrderDetailResult['order'] = null;
+let error: string | null = null;
+
+if (isCustomerAccountConfigured()) {
+  const client = createCustomerClient(Astro.cookies, getPublicOrigin(Astro.request, Astro.url));
+  loggedIn = client.isLoggedIn();
+  if (loggedIn) {
+    try {
+      const data = await client.query<OrderDetailResult>(ORDER_DETAIL_QUERY, { id: gid });
+      order = data.order;
+    } catch (err) {
+      if (err instanceof NotAuthenticatedError) {
+        loggedIn = false;
+      } else {
+        console.error('[account/order] load failed:', (err as Error).message);
+        error = (err as Error).message;
+      }
+    }
+  }
+}
+
+// Logged in, no error, but the order doesn't exist / isn't theirs → 404.
+if (loggedIn && !error && !order) {
+  Astro.response.status = 404;
+}
+
+const lines = order?.lineItems?.nodes ?? [];
+const currency = order?.totalPrice?.currencyCode ?? 'USD';
+
+const fmtMoney = (m: Money | null) =>
+  m ? new Intl.NumberFormat('en-US', { style: 'currency', currency: m.currencyCode }).format(Number(m.amount)) : '—';
+const fmtDate = (iso: string) =>
+  new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(iso));
+const titleCase = (s: string) =>
+  s.toLowerCase().replace(/(^|_)([a-z])/g, (_, sep, c) => (sep ? ' ' : '') + c.toUpperCase());
+---
+
+<BaseLayout title={order ? `Order ${order.name}` : 'Order'}>
+  <section class="shop">
+    <div class="wrap">
+      {
+        !isCustomerAccountConfigured() ? (
+          <div class="page-intro">
+            <span class="eyebrow">Account</span>
+            <h1>Members, <em>soon</em>.</h1>
+            <p>Customer accounts are arriving shortly.</p>
+            <a class="btn-primary" href="/products" style="margin-top:8px;">Continue shopping</a>
+          </div>
+        ) : !loggedIn ? (
+          <div class="page-intro" style="max-width:560px;">
+            <span class="eyebrow">Account</span>
+            <h1>Please <em>sign in</em>.</h1>
+            <p>Sign in to view your order.</p>
+            <a class="btn-primary" href="/account/login?return_to=/account" style="margin-top:8px;">Sign in</a>
+          </div>
+        ) : error ? (
+          <div class="page-intro">
+            <span class="eyebrow">Order</span>
+            <h1>Couldn't load <em>this order</em>.</h1>
+            <p class="cart-error" style="max-width:520px;">{error}</p>
+            <a class="link-arrow" href="/account">← Back to account</a>
+          </div>
+        ) : !order ? (
+          <div class="page-intro">
+            <span class="eyebrow">Order</span>
+            <h1>Order <em>not found</em>.</h1>
+            <p>We couldn't find that order on your account.</p>
+            <a class="link-arrow" href="/account">← Back to account</a>
+          </div>
+        ) : (
+          <>
+            <div class="page-intro order-head">
+              <a class="link-arrow order-back" href="/account">← Back to account</a>
+              <span class="eyebrow">Order details</span>
+              <h1>Order <em>{order.name}</em></h1>
+              <p class="order-meta">
+                Placed {fmtDate(order.processedAt)}
+                {order.financialStatus && (
+                  <span class="order-status">{titleCase(order.financialStatus)}</span>
+                )}
+              </p>
+            </div>
+
+            <div class="order-detail-grid">
+              <section class="account-card">
+                <div class="account-card-head"><h2>Items</h2></div>
+                <ul class="order-items">
+                  {lines.map((li) => (
+                    <li class="order-item">
+                      <div class="order-item-img">
+                        {li.image?.url && <img src={li.image.url} alt={li.image.altText ?? li.title} loading="lazy" />}
+                        <span class="order-item-qty">{li.quantity}</span>
+                      </div>
+                      <div class="order-item-body">
+                        <span class="order-item-title">{li.title}</span>
+                        {li.variantTitle && li.variantTitle !== 'Default Title' && (
+                          <span class="order-item-variant">{li.variantTitle}</span>
+                        )}
+                      </div>
+                      <span class="order-item-price">{fmtMoney(li.totalPrice)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <aside class="account-card order-summary">
+                <div class="account-card-head"><h2>Summary</h2></div>
+                <dl class="order-totals">
+                  <div><dt>Subtotal</dt><dd>{fmtMoney(order.subtotal)}</dd></div>
+                  <div><dt>Shipping</dt><dd>{fmtMoney(order.totalShipping)}</dd></div>
+                  <div><dt>Tax</dt><dd>{fmtMoney(order.totalTax)}</dd></div>
+                  <div class="order-totals-grand"><dt>Total</dt><dd>{fmtMoney(order.totalPrice)}</dd></div>
+                </dl>
+              </aside>
+            </div>
+          </>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>
