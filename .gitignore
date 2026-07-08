@@ -43,3 +43,6 @@ pnpm-debug.log*
 .vercel/
 .netlify/
 #test
+
+# Use npm, not yarn — avoid a second lockfile that flips CI's package manager
+yarn.lock
