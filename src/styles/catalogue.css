@@ -75,6 +75,20 @@
 .add-to-cart-button.added { background: var(--editorial-secondary); color: var(--editorial-dark); }
 .add-to-cart-button[disabled] { cursor: default; opacity: 0.9; }
 .add-to-cart-button.is-disabled { background: var(--editorial-text-muted); cursor: default; pointer-events: none; }
+.quickview-btn {
+  width: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--editorial-surface);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--r-soft);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.quickview-btn:hover { background: var(--primary); color: #fff; }
 .product-info { padding-top: 15px; display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
 /* On phones the cards are too narrow for title + price side by side — stack them. */
 @media (max-width: 560px) {
@@ -289,7 +303,17 @@
 }
 @media (max-width: 560px) {
   .shop-main .products { grid-template-columns: 1fr 1fr; gap: 20px 14px; }
-  .product-actions { opacity: 1; transform: none; }
+  /* Actions stay visible (no hover on touch) and shrink to fit the
+     narrow 2-up cards so "Add to Bag" never wraps to two lines. */
+  .product-actions { opacity: 1; transform: none; left: 8px; right: 8px; bottom: 8px; gap: 6px; }
+  .add-to-cart-button {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    padding: 11px 6px;
+    white-space: nowrap;
+  }
+  .quickview-btn { width: 38px; }
+  .quickview-btn svg { width: 15px; height: 15px; }
 }
 
 /* Category cards (.cat-*) live in home.css, imported site-wide. */

@@ -62,6 +62,18 @@ const priceLabel = formatMoney(price.amount, price.currencyCode);
           <a class="add-to-cart-button" href={href}>View Product</a>
         )
       }
+      <button
+        class="quickview-btn"
+        type="button"
+        data-quickview
+        data-handle={product.handle}
+        aria-label={`Quick view ${product.title}`}
+      >
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+        </svg>
+      </button>
     </div>
   </div>
   <a class="product-info" href={href}>
@@ -85,8 +97,10 @@ const priceLabel = formatMoney(price.amount, price.currencyCode);
 </div>
 
 <script>
-  // Delegated quick-add: one document listener for every product card.
+  // Delegated quick-add + quick-view: one pair of document listeners
+  // for every product card, however many are on the page.
   import { addItem } from '~/stores/cart';
+  import { openQuickview } from '~/stores/quickview';
 
   if (!(window as any).__edCardAdd) {
     (window as any).__edCardAdd = true;
@@ -107,6 +121,17 @@ const priceLabel = formatMoney(price.amount, price.currencyCode);
         btn.classList.remove('added');
         btn.disabled = false;
       }, 1600);
+    });
+  }
+
+  if (!(window as any).__edCardQuickview) {
+    (window as any).__edCardQuickview = true;
+    document.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('[data-quickview]') as HTMLButtonElement | null;
+      if (!btn) return;
+      e.preventDefault();
+      const handle = btn.dataset.handle;
+      if (handle) openQuickview(handle);
     });
   }
 </script>
