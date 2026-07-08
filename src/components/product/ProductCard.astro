@@ -97,10 +97,9 @@ const priceLabel = formatMoney(price.amount, price.currencyCode);
 </div>
 
 <script>
-  // Delegated quick-add + quick-view: one pair of document listeners
-  // for every product card, however many are on the page.
+  // Delegated quick-add: one document listener for every product card.
+  // (Quick-view opening is owned by the global QuickView component.)
   import { addItem } from '~/stores/cart';
-  import { openQuickview } from '~/stores/quickview';
 
   if (!(window as any).__edCardAdd) {
     (window as any).__edCardAdd = true;
@@ -121,17 +120,6 @@ const priceLabel = formatMoney(price.amount, price.currencyCode);
         btn.classList.remove('added');
         btn.disabled = false;
       }, 1600);
-    });
-  }
-
-  if (!(window as any).__edCardQuickview) {
-    (window as any).__edCardQuickview = true;
-    document.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest('[data-quickview]') as HTMLButtonElement | null;
-      if (!btn) return;
-      e.preventDefault();
-      const handle = btn.dataset.handle;
-      if (handle) openQuickview(handle);
     });
   }
 </script>

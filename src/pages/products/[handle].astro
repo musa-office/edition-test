@@ -4,8 +4,8 @@
 //  + recommendations.
 // ============================================================
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import ProductGallery from '~/components/react/ProductGallery.tsx';
-import VariantSelector from '~/components/react/VariantSelector.tsx';
+import ProductGallery from '~/components/product/ProductGallery.astro';
+import VariantSelector from '~/components/product/VariantSelector.astro';
 import ProductGrid from '~/components/product/ProductGrid.astro';
 import { getProduct, getProductRecommendations } from '~/lib/shopify';
 import { formatMoney } from '~/lib/utils';
@@ -125,7 +125,7 @@ const recentItem = product
       <section class="pdp">
         <div class="wrap">
           <div class="pdp-grid">
-            <ProductGallery client:load images={images} title={product.title} />
+            <ProductGallery images={images} title={product.title} />
 
             <div class="pdp-info">
               {product.vendor && <span class="pdp-cat">{product.vendor}</span>}
@@ -137,7 +137,6 @@ const recentItem = product
               </div>
 
               <VariantSelector
-                client:load
                 options={product.options}
                 variants={product.variants}
                 currencyCode={currency}

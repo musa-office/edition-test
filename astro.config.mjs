@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig, envField, sessionDrivers } from "astro/config";
-import react from "@astrojs/react";
 import cloudflare from "@astrojs/cloudflare";
 import node from "@astrojs/node";
 import vercel from "@astrojs/vercel";
@@ -30,7 +29,7 @@ function getAdapter() {
 export default defineConfig({
   output: "server",
   adapter: getAdapter(),
-  integrations: [react()],
+  integrations: [],
   // This app doesn't use Astro.session. Pick an in-memory driver so the
   // Cloudflare adapter doesn't force a KV "SESSION" binding at deploy time.
   session: {
@@ -56,15 +55,6 @@ export default defineConfig({
     // blocks unknown Host headers). localhost is always allowed.
     server: {
       allowedHosts: true,
-    },
-    // Force Vite to pre-bundle React to ESM so islands get the
-    // named `createRoot` export, and dedupe to a single copy
-    // (prevents "Invalid hook call" / duplicate-React errors).
-    optimizeDeps: {
-      include: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"],
-    },
-    resolve: {
-      dedupe: ["react", "react-dom"],
     },
   },
 });

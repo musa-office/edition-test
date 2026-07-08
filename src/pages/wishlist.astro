@@ -3,7 +3,6 @@
 //  Wishlist — saved pieces (localStorage, client-rendered).
 // ============================================================
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import WishlistGrid from '~/components/react/WishlistGrid.tsx';
 ---
 
 <BaseLayout title="Wishlist" description="Your saved Édition pieces.">
@@ -14,7 +13,69 @@ import WishlistGrid from '~/components/react/WishlistGrid.tsx';
         <h1>Your <em>wishlist</em></h1>
         <p>The pieces you've saved for later. They live in this browser — sign in soon to sync across devices.</p>
       </div>
-      <WishlistGrid client:only="react" />
+      <div data-wishlist-root></div>
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  // Render the localStorage wishlist as editorial product cards and
+  // keep it in sync with heart toggles elsewhere on the site.
+  import { readWishlist, removeWish, WISHLIST_EVENT, type WishItem } from '~/lib/wishlist';
+  import { escapeHtml } from '~/lib/dom';
+
+  const root = document.querySelector<HTMLElement>('[data-wishlist-root]');
+
+  const HEART = `<svg width="16" height="16" fill="currentColor" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+
+  function cardHtml(it: WishItem): string {
+    const href = `/products/${encodeURIComponent(it.handle)}`;
+    const media = it.image
+      ? `<img src="${escapeHtml(it.image)}" alt="${escapeHtml(it.title)}" loading="lazy" />`
+      : `<div class="pdp-noimg">No image</div>`;
+    return `
+      <div class="product">
+        <div class="product-media">
+          <button class="wish-btn active" type="button" data-wish-remove="${escapeHtml(it.handle)}" aria-label="Remove ${escapeHtml(it.title)} from wishlist">${HEART}</button>
+          ${media}
+          <a class="pm-link" href="${href}" aria-label="${escapeHtml(it.title)}"></a>
+          <div class="product-actions">
+            <a class="add-to-cart-button" href="${href}">View Product</a>
+          </div>
+        </div>
+        <a class="product-info" href="${href}">
+          <div>
+            ${it.vendor ? `<span class="product-cat">${escapeHtml(it.vendor)}</span>` : ''}
+            <h3 class="product-title">${escapeHtml(it.title)}</h3>
+          </div>
+          <span class="price">${escapeHtml(it.price)}</span>
+        </a>
+      </div>`;
+  }
+
+  function render() {
+    if (!root) return;
+    const items = readWishlist();
+    if (items.length === 0) {
+      root.innerHTML = `
+        <div class="shop-empty">
+          <p class="se-title">Your wishlist is empty</p>
+          <p>Tap the heart on any piece to save it here for later.</p>
+          <a class="btn-primary" href="/products">Browse the collection</a>
+        </div>`;
+      return;
+    }
+    root.innerHTML = `<div class="products">${items.map(cardHtml).join('')}</div>`;
+  }
+
+  root?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-wish-remove]');
+    if (!btn) return;
+    e.preventDefault();
+    removeWish(btn.dataset.wishRemove || '');
+  });
+
+  window.addEventListener(WISHLIST_EVENT, render);
+  window.addEventListener('storage', render);
+  render();
+</script>

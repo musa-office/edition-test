@@ -1,0 +1,181 @@
+---
+// ============================================================
+//  CartDrawer — editorial slide-over cart. Rendered once, globally
+//  (in BaseLayout). Reads the shared nanostore so it stays in sync
+//  with the header badge and every add-to-cart button. No framework.
+// ============================================================
+---
+
+<div class="cart-overlay" data-cart-overlay aria-hidden="true"></div>
+<aside
+  class="cart-drawer"
+  data-cart-drawer
+  role="dialog"
+  aria-modal="true"
+  aria-label="Shopping cart"
+  aria-hidden="true"
+  inert
+  tabindex="-1"
+>
+  <div class="cart-header">
+    <div class="cart-header-left">
+      <span class="cart-title">Your Bag</span>
+      <span class="cart-count-lbl" data-cart-count>0 items</span>
+    </div>
+    <button type="button" class="cart-close-btn" data-cart-close aria-label="Close cart">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M18 6L6 18M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <div data-cart-content></div>
+</aside>
+
+<script>
+  import {
+    $cart,
+    $cartOpen,
+    $cartBusy,
+    $cartError,
+    $busyLines,
+    closeCart,
+    updateItem,
+    removeItem,
+    checkout,
+  } from '~/stores/cart';
+  import { cartLineHtml } from '~/lib/cart-render';
+  import { formatMoney } from '~/lib/utils';
+  import { escapeHtml, trapFocus } from '~/lib/dom';
+  import { SITE } from '~/config/site';
+
+  const overlay = document.querySelector<HTMLElement>('[data-cart-overlay]');
+  const drawer = document.querySelector<HTMLElement>('[data-cart-drawer]');
+  const countLbl = document.querySelector<HTMLElement>('[data-cart-count]');
+  const content = document.querySelector<HTMLElement>('[data-cart-content]');
+
+  let releaseTrap: (() => void) | null = null;
+  let prevOverflow = '';
+
+  const EMPTY_ICON = `<svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`;
+  const ARROW = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+
+  function renderContent() {
+    if (!content) return;
+    const cart = $cart.get();
+    const lines = cart?.lines ?? [];
+    const count = cart?.totalQuantity ?? 0;
+    const busy = $cartBusy.get();
+    const error = $cartError.get();
+    const busyLines = $busyLines.get();
+
+    if (countLbl) countLbl.textContent = count === 1 ? '1 item' : `${count} items`;
+
+    if (lines.length === 0) {
+      content.innerHTML = `
+        <div class="cart-empty">
+          <div class="cart-empty-icon">${EMPTY_ICON}</div>
+          <p class="cart-empty-title">Your bag is empty</p>
+          <p class="cart-empty-text">Discover the SS26 collection and add your favourites.</p>
+          <button type="button" class="btn-primary" data-cart-close>Start Shopping</button>
+        </div>`;
+      return;
+    }
+
+    const currency = cart?.cost?.subtotalAmount?.currencyCode ?? 'USD';
+    const subtotal = Number(cart?.cost?.subtotalAmount?.amount ?? 0);
+    const threshold = SITE.freeShippingThreshold;
+    const remaining = Math.max(0, threshold - subtotal);
+    const progress = Math.min(100, threshold > 0 ? (subtotal / threshold) * 100 : 0);
+
+    const rows = lines
+      .map((l) => cartLineHtml(l, currency, { busy: !!busyLines[l.id] }))
+      .join('');
+
+    content.innerHTML = `
+      <div class="cart-body">${rows}</div>
+      <div class="cart-footer">
+        ${error ? `<div class="cart-error" role="alert">${escapeHtml(error)}</div>` : ''}
+        <div class="cart-shipping-msg">
+          ${remaining > 0 ? `<span>You're ${escapeHtml(formatMoney(remaining, currency))} away from free shipping</span>` : `<span>✓ You've unlocked free shipping</span>`}
+        </div>
+        <div class="cart-progress"><div class="cart-progress-bar" style="width:${progress}%"></div></div>
+        <div class="cart-subtotal-row">
+          <span class="cart-subtotal-label">Subtotal</span>
+          <span class="cart-subtotal-val">${escapeHtml(formatMoney(subtotal, currency))}</span>
+        </div>
+        <button type="button" class="cart-checkout-btn" data-checkout ${busy ? 'disabled' : ''}>
+          ${busy ? 'Working…' : `Checkout ${ARROW}`}
+        </button>
+        <a href="/cart" class="cart-view-btn" data-cart-close>View Cart</a>
+      </div>`;
+  }
+
+  function setOpen(open: boolean) {
+    if (!drawer || !overlay) return;
+    drawer.classList.toggle('open', open);
+    overlay.classList.toggle('open', open);
+    drawer.setAttribute('aria-hidden', String(!open));
+    if (open) {
+      drawer.removeAttribute('inert');
+      prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      releaseTrap = trapFocus(drawer);
+    } else {
+      drawer.setAttribute('inert', '');
+      document.body.style.overflow = prevOverflow;
+      releaseTrap?.();
+      releaseTrap = null;
+    }
+  }
+
+  function lineId(el: HTMLElement): string | undefined {
+    return el.closest<HTMLElement>('.cart-item')?.dataset.id;
+  }
+
+  // Delegated interactions across header, body, footer, empty state.
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-cart-drawer], [data-cart-overlay]')) return;
+
+    if (target.closest('[data-cart-overlay]') || target.closest('[data-cart-close]')) {
+      closeCart();
+      return;
+    }
+    if (target.closest('[data-checkout]')) {
+      checkout();
+      return;
+    }
+
+    const cart = $cart.get();
+    const line = (id?: string) => cart?.lines.find((l) => l.id === id);
+
+    const dec = target.closest<HTMLElement>('[data-line-dec]');
+    if (dec) {
+      const l = line(lineId(dec));
+      if (l) updateItem(l.id, l.quantity - 1);
+      return;
+    }
+    const inc = target.closest<HTMLElement>('[data-line-inc]');
+    if (inc) {
+      const l = line(lineId(inc));
+      if (l) updateItem(l.id, l.quantity + 1);
+      return;
+    }
+    const rem = target.closest<HTMLElement>('[data-line-remove]');
+    if (rem) {
+      const id = lineId(rem);
+      if (id) removeItem(id);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $cartOpen.get()) closeCart();
+  });
+
+  $cartOpen.subscribe(setOpen);
+  $cart.subscribe(renderContent);
+  $cartBusy.subscribe(renderContent);
+  $cartError.subscribe(renderContent);
+  $busyLines.subscribe(renderContent);
+</script>

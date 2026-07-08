@@ -1,0 +1,85 @@
+---
+// ============================================================
+//  ProductGallery — editorial PDP gallery: vertical thumb rail
+//  + large main image with a soft swap fade. Server-rendered;
+//  a tiny script swaps the active thumb (no framework).
+// ============================================================
+import type { Image } from '~/lib/shopify/types';
+
+interface Props {
+  images: Image[];
+  title: string;
+}
+
+const { images, title } = Astro.props;
+const gallery = images.length ? images : [];
+const first = gallery[0];
+const multiple = gallery.length > 1;
+---
+
+{
+  multiple ? (
+    <div class="pdp-gallery" data-gallery>
+      <div class="pdp-thumbs" aria-label={`${title} images`}>
+        {gallery.map((img, i) => (
+          <button
+            type="button"
+            class={`pdp-thumb ${i === 0 ? 'active' : ''}`}
+            aria-pressed={i === 0}
+            aria-label={`Show image ${i + 1}`}
+            data-thumb
+            data-src={img.url}
+          >
+            <img src={img.url} alt="" loading="lazy" />
+          </button>
+        ))}
+      </div>
+      <div class="pdp-main">
+        <img
+          src={first.url}
+          alt={first.altText ?? title}
+          width={first.width ?? undefined}
+          height={first.height ?? undefined}
+          fetchpriority="high"
+          data-main-img
+        />
+      </div>
+    </div>
+  ) : (
+    <div>
+      <div class="pdp-main">
+        {first ? (
+          <img
+            src={first.url}
+            alt={first.altText ?? title}
+            width={first.width ?? undefined}
+            height={first.height ?? undefined}
+            fetchpriority="high"
+          />
+        ) : (
+          <div class="pdp-noimg">No image</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+<script>
+  // Thumb-rail image swap for every PDP gallery on the page.
+  document.querySelectorAll<HTMLElement>('[data-gallery]').forEach((gallery) => {
+    const main = gallery.querySelector<HTMLImageElement>('[data-main-img]');
+    const thumbs = Array.from(gallery.querySelectorAll<HTMLButtonElement>('[data-thumb]'));
+    thumbs.forEach((thumb) => {
+      thumb.addEventListener('click', () => {
+        const src = thumb.dataset.src;
+        if (!src || !main) return;
+        main.src = src;
+        thumbs.forEach((t) => {
+          const active = t === thumb;
+          t.classList.toggle('active', active);
+          t.setAttribute('aria-pressed', String(active));
+        });
+      });
+    });
+  });
+</script>

@@ -1,0 +1,212 @@
+---
+// ============================================================
+//  PredictiveSearch — header search trigger + editorial sliding
+//  panel with instant results (debounced /api/search). Enter goes
+//  to the full /search page. Server-rendered shell + vanilla script.
+// ============================================================
+const TRENDING = ['Wool Coat', 'Silk Dress', 'Leather Tote', 'Cashmere', 'SS26 Edit', 'Tailoring'];
+---
+
+<button type="button" class="nav-icon" data-search-open aria-label="Search">
+  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+  </svg>
+</button>
+
+<div class="search-overlay" data-search-overlay aria-hidden="true"></div>
+<div
+  class="search-panel"
+  data-search-panel
+  role="dialog"
+  aria-modal="true"
+  aria-label="Search"
+  aria-hidden="true"
+  inert
+>
+  <div class="search-panel-inner">
+    <form class="search-input-wrap" data-search-form>
+      <span class="search-icon-wrap">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+      </span>
+      <input
+        class="search-input"
+        data-search-input
+        placeholder="Search styles, fabrics, collections…"
+        autocomplete="off"
+        aria-label="Search"
+      />
+      <button type="button" class="search-clear-btn" data-search-clear aria-label="Clear search">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
+      </button>
+    </form>
+
+    <button class="search-close-btn" type="button" data-search-close aria-label="Close search">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
+      Close
+    </button>
+
+    <div class="search-bottom">
+      <div>
+        <span class="search-section-heading">Trending Now</span>
+        <div class="search-tags">
+          {TRENDING.map((t) => (
+            <button type="button" class="search-tag" data-search-tag={t}>{t}</button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <span class="search-section-heading" data-search-heading>Start typing</span>
+        <div data-search-results>
+          <p class="search-empty">Type at least two characters to search the collection.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { formatMoney } from '~/lib/utils';
+  import { escapeHtml, trapFocus } from '~/lib/dom';
+
+  interface PProduct {
+    id: string;
+    title: string;
+    handle: string;
+    featuredImage?: { url: string; altText?: string | null } | null;
+    priceRange: { minVariantPrice: { amount: string; currencyCode: string } };
+  }
+  interface PCollection { id: string; title: string; handle: string }
+
+  const openBtn = document.querySelector<HTMLElement>('[data-search-open]');
+  const overlay = document.querySelector<HTMLElement>('[data-search-overlay]');
+  const panel = document.querySelector<HTMLElement>('[data-search-panel]');
+  const form = document.querySelector<HTMLFormElement>('[data-search-form]');
+  const input = document.querySelector<HTMLInputElement>('[data-search-input]');
+  const clearBtn = document.querySelector<HTMLElement>('[data-search-clear]');
+  const closeBtn = document.querySelector<HTMLElement>('[data-search-close]');
+  const heading = document.querySelector<HTMLElement>('[data-search-heading]');
+  const resultsEl = document.querySelector<HTMLElement>('[data-search-results]');
+
+  let open = false;
+  let releaseTrap: (() => void) | null = null;
+  let debounce: number | undefined;
+  let reqId = 0;
+
+  function setOpen(next: boolean) {
+    if (!panel || !overlay) return;
+    open = next;
+    panel.classList.toggle('open', next);
+    overlay.classList.toggle('open', next);
+    panel.setAttribute('aria-hidden', String(!next));
+    if (next) {
+      panel.removeAttribute('inert');
+      document.body.style.overflow = 'hidden';
+      input?.focus();
+      releaseTrap = trapFocus(panel);
+    } else {
+      panel.setAttribute('inert', '');
+      document.body.style.overflow = '';
+      releaseTrap?.();
+      releaseTrap = null;
+    }
+  }
+
+  function resultHtml(products: PProduct[], collections: PCollection[]): string {
+    const cols = collections
+      .map(
+        (c) => `
+        <a class="search-result" href="/collections/${encodeURIComponent(c.handle)}">
+          <span class="search-result-name">${escapeHtml(c.title)}</span>
+          <span class="search-result-price">Collection</span>
+        </a>`,
+      )
+      .join('');
+    const prods = products
+      .map((p) => {
+        const img = p.featuredImage
+          ? `<img src="${escapeHtml(p.featuredImage.url)}" alt="${escapeHtml(p.featuredImage.altText ?? p.title)}" loading="lazy" />`
+          : '';
+        const price = formatMoney(
+          p.priceRange.minVariantPrice.amount,
+          p.priceRange.minVariantPrice.currencyCode,
+        );
+        return `
+        <a class="search-result" href="/products/${encodeURIComponent(p.handle)}">
+          <span class="search-result-img">${img}</span>
+          <span class="search-result-name">${escapeHtml(p.title)}</span>
+          <span class="search-result-price">${escapeHtml(price)}</span>
+        </a>`;
+      })
+      .join('');
+    return `<div class="search-results">${cols}${prods}</div>`;
+  }
+
+  function runSearch(raw: string) {
+    const q = raw.trim();
+    if (heading) heading.textContent = q.length >= 2 ? 'Results' : 'Start typing';
+    if (!resultsEl) return;
+
+    if (q.length < 2) {
+      resultsEl.innerHTML = `<p class="search-empty">Type at least two characters to search the collection.</p>`;
+      return;
+    }
+
+    resultsEl.innerHTML = `<p class="search-loading">Searching…</p>`;
+    const id = ++reqId;
+    fetch(`/api/search?q=${encodeURIComponent(q)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (id !== reqId) return;
+        const products: PProduct[] = data.products ?? [];
+        const collections: PCollection[] = data.collections ?? [];
+        if (!products.length && !collections.length) {
+          resultsEl.innerHTML = `<p class="search-empty">No matches for “${escapeHtml(q)}”.</p>`;
+          return;
+        }
+        resultsEl.innerHTML = resultHtml(products, collections);
+      })
+      .catch(() => {
+        if (id !== reqId) return;
+        resultsEl.innerHTML = `<p class="search-empty">Search is unavailable right now.</p>`;
+      });
+  }
+
+  function onInput() {
+    if (!input) return;
+    clearBtn?.classList.toggle('show', !!input.value);
+    window.clearTimeout(debounce);
+    debounce = window.setTimeout(() => runSearch(input.value), 220);
+  }
+
+  openBtn?.addEventListener('click', () => setOpen(true));
+  overlay?.addEventListener('click', () => setOpen(false));
+  closeBtn?.addEventListener('click', () => setOpen(false));
+  input?.addEventListener('input', onInput);
+
+  clearBtn?.addEventListener('click', () => {
+    if (!input) return;
+    input.value = '';
+    onInput();
+    input.focus();
+  });
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = input?.value.trim();
+    if (q) window.location.href = `/search?q=${encodeURIComponent(q)}`;
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-search-tag]').forEach((tag) => {
+    tag.addEventListener('click', () => {
+      if (!input) return;
+      input.value = tag.dataset.searchTag || '';
+      onInput();
+      input.focus();
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && open) setOpen(false);
+  });
+</script>

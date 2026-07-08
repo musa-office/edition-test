@@ -1,0 +1,231 @@
+---
+// ============================================================
+//  QuickView — editorial "peek" modal opened from a product
+//  card's eye button. Rendered once, globally (in BaseLayout).
+//  Fetches the full product on demand from /api/products/:handle
+//  so the card grids keep shipping the lightweight card shape.
+// ============================================================
+---
+
+<div class="qv-overlay" data-qv-overlay aria-hidden="true"></div>
+<div
+  class="qv-modal"
+  data-qv-modal
+  role="dialog"
+  aria-modal="true"
+  aria-label="Quick view"
+  aria-hidden="true"
+  inert
+  tabindex="-1"
+>
+  <div class="qv-media" data-qv-media></div>
+  <div class="qv-body" data-qv-body>
+    <button type="button" class="qv-close" data-qv-close aria-label="Close quick view">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
+    </button>
+    <div data-qv-content></div>
+  </div>
+</div>
+
+<script>
+  import type { Product, ProductOption } from '~/lib/shopify/types';
+  import { formatMoney, isOnSale, discountPercent } from '~/lib/utils';
+  import {
+    isDefaultOnly,
+    isColorOption,
+    swatchColor,
+    findVariant,
+  } from '~/lib/variant-options';
+  import { addItem } from '~/stores/cart';
+  import { escapeHtml, trapFocus } from '~/lib/dom';
+
+  const overlay = document.querySelector<HTMLElement>('[data-qv-overlay]');
+  const modal = document.querySelector<HTMLElement>('[data-qv-modal]');
+  const media = document.querySelector<HTMLElement>('[data-qv-media]');
+  const content = document.querySelector<HTMLElement>('[data-qv-content]');
+  const closeBtn = document.querySelector<HTMLElement>('[data-qv-close]');
+
+  let product: Product | null = null;
+  let selected: Record<string, string> = {};
+  let adding = false;
+  let releaseTrap: (() => void) | null = null;
+  let reqId = 0;
+
+  const CLOSE_ARROW = `<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+
+  function currentVariant() {
+    return product ? findVariant(product.variants, selected) : undefined;
+  }
+
+  function valueAvailable(optionName: string, value: string) {
+    if (!product) return false;
+    return product.variants.some(
+      (v) =>
+        v.availableForSale &&
+        v.selectedOptions.some((o) => o.name === optionName && o.value === value) &&
+        v.selectedOptions.every(
+          (o) => o.name === optionName || selected[o.name] === o.value,
+        ),
+    );
+  }
+
+  function optionHtml(option: ProductOption): string {
+    const colour = isColorOption(option.name);
+    const rows = option.optionValues
+      .map((ov) => {
+        const active = selected[option.name] === ov.name;
+        const possible = valueAvailable(option.name, ov.name);
+        const cls = `${active ? 'active' : ''} ${!possible && !active ? 'unavailable' : ''}`.trim();
+        if (colour) {
+          return `<button type="button" class="swatch ${cls}" style="background:${swatchColor(ov.name)}" aria-pressed="${active}" aria-label="${escapeHtml(ov.name)}" title="${escapeHtml(ov.name)}" data-opt="${escapeHtml(option.name)}" data-val="${escapeHtml(ov.name)}"></button>`;
+        }
+        const label = !possible && !active ? `${ov.name} (unavailable)` : ov.name;
+        return `<button type="button" class="qv-size ${cls}" aria-pressed="${active}" aria-label="${escapeHtml(label)}" data-opt="${escapeHtml(option.name)}" data-val="${escapeHtml(ov.name)}">${escapeHtml(ov.name)}</button>`;
+      })
+      .join('');
+    return `
+      <div>
+        <span class="qv-label">${escapeHtml(option.name)}</span>
+        <div class="${colour ? 'qv-swatches' : 'qv-sizes'}">${rows}</div>
+      </div>`;
+  }
+
+  function render() {
+    if (!content || !media || !product) return;
+    const variant = currentVariant();
+    const available = variant?.availableForSale ?? false;
+    const singleVariant =
+      isDefaultOnly(product.options) || product.options.length === 0;
+    const currency =
+      variant?.price.currencyCode ??
+      product.priceRange.minVariantPrice.currencyCode ??
+      'USD';
+    const priceLabel = variant
+      ? formatMoney(variant.price.amount, currency)
+      : formatMoney(product.priceRange.minVariantPrice.amount, currency);
+    const onSale = isOnSale(variant?.price, variant?.compareAtPrice);
+    const off = discountPercent(variant?.price, variant?.compareAtPrice);
+
+    media.innerHTML = product.featuredImage
+      ? `<img src="${escapeHtml(product.featuredImage.url)}" alt="${escapeHtml(product.featuredImage.altText ?? product.title)}" />`
+      : '';
+
+    const saleHtml =
+      onSale && variant?.compareAtPrice
+        ? ` <del>${escapeHtml(formatMoney(variant.compareAtPrice.amount, currency))}</del>${off != null ? `<span class="pdp-off">−${off}%</span>` : ''}`
+        : '';
+
+    const optionsHtml = singleVariant
+      ? ''
+      : product.options.map(optionHtml).join('');
+
+    const addLabel = adding ? 'Adding…' : available ? 'Add to Bag' : 'Sold Out';
+
+    content.innerHTML = `
+      ${product.vendor ? `<span class="qv-cat">${escapeHtml(product.vendor)}</span>` : ''}
+      <h3 class="qv-name">${escapeHtml(product.title)}</h3>
+      <p class="qv-price">${escapeHtml(priceLabel)}${saleHtml}</p>
+      ${product.description ? `<p class="qv-desc clamp">${escapeHtml(product.description)}</p>` : ''}
+      ${optionsHtml}
+      <button type="button" class="qv-add" data-qv-add ${!available || adding ? 'disabled' : ''}>${addLabel}</button>
+      <a href="/products/${encodeURIComponent(product.handle)}" class="qv-fulllink" data-qv-link>View full details ${CLOSE_ARROW}</a>`;
+  }
+
+  function open(handle: string) {
+    if (!modal || !overlay || !content) return;
+    modal.classList.add('open');
+    overlay.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    modal.removeAttribute('inert');
+    document.body.style.overflow = 'hidden';
+    product = null;
+    selected = {};
+    adding = false;
+    content.innerHTML = `<p class="qv-desc">Loading…</p>`;
+    if (media) media.innerHTML = '';
+    releaseTrap = trapFocus(modal);
+
+    const id = ++reqId;
+    fetch(`/api/products/${encodeURIComponent(handle)}`, {
+      headers: { accept: 'application/json' },
+    })
+      .then((res) => res.json())
+      .then((data: { product: Product | null }) => {
+        if (id !== reqId) return;
+        if (!data.product) {
+          if (content) content.innerHTML = `<p class="qv-desc">This product could not be loaded.</p>`;
+          return;
+        }
+        product = data.product;
+        const base =
+          product.variants.find((v) => v.availableForSale) ?? product.variants[0];
+        selected = {};
+        base?.selectedOptions.forEach((o) => (selected[o.name] = o.value));
+        render();
+      })
+      .catch(() => {
+        if (id !== reqId) return;
+        if (content) content.innerHTML = `<p class="qv-desc">This product could not be loaded.</p>`;
+      });
+  }
+
+  function close() {
+    if (!modal || !overlay) return;
+    modal.classList.remove('open');
+    overlay.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
+    document.body.style.overflow = '';
+    releaseTrap?.();
+    releaseTrap = null;
+  }
+
+  // Delegated open trigger from any product card's eye button.
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-quickview]');
+    if (!btn) return;
+    e.preventDefault();
+    const handle = btn.dataset.handle;
+    if (handle) open(handle);
+  });
+
+  // In-modal interactions (option pick, add, link, close).
+  content?.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+
+    const opt = target.closest<HTMLElement>('[data-opt]');
+    if (opt) {
+      const name = opt.dataset.opt;
+      const val = opt.dataset.val;
+      if (name && val) {
+        selected = { ...selected, [name]: val };
+        render();
+      }
+      return;
+    }
+
+    if (target.closest('[data-qv-link]')) {
+      close();
+      return;
+    }
+
+    const add = target.closest<HTMLElement>('[data-qv-add]');
+    if (add) {
+      const variant = currentVariant();
+      if (!variant || !variant.availableForSale || adding) return;
+      adding = true;
+      render();
+      await addItem(variant.id, 1);
+      adding = false;
+      close();
+    }
+  });
+
+  closeBtn?.addEventListener('click', close);
+  overlay?.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('open')) close();
+  });
+</script>

@@ -5,9 +5,7 @@
 //  stay visible when the nav collapses to the hamburger.
 // ============================================================
 import { SITE, MEGA_MENU, NAV_LEFT_LINKS, NAV_RIGHT_LINKS } from '~/config/site';
-import CartButton from '~/components/react/CartButton.tsx';
-import PredictiveSearch from '~/components/react/PredictiveSearch.tsx';
-
+import PredictiveSearch from '~/components/layout/PredictiveSearch.astro';
 const { wordmark } = SITE;
 ---
 
@@ -71,7 +69,7 @@ const { wordmark } = SITE;
         ))}
       </ul>
       <div class="nav-actions">
-        <PredictiveSearch client:idle />
+        <PredictiveSearch />
         <a class="nav-icon account-icon" href="/account" aria-label="Account">
           <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -84,7 +82,14 @@ const { wordmark } = SITE;
           </svg>
           <span class="nav-badge wish-badge" id="wishBadge" style="display:none;">0</span>
         </a>
-        <CartButton client:load />
+        <button type="button" class="nav-icon" id="cartToggle" aria-label="Open cart" data-cart-open>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          <span class="nav-badge" id="cartBadge" style="display:none;">0</span>
+        </button>
         <button class="nav-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
           <span></span><span></span><span></span>
         </button>
@@ -121,4 +126,31 @@ const { wordmark } = SITE;
   });
   // Close when a mobile link is tapped.
   mobileNav?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
+</script>
+
+<script>
+  // Header cart trigger — hydrate the cart once, keep the badge in
+  // sync with the shared nanostore, and open the drawer on click.
+  import { $cart, initCart, openCart } from '~/stores/cart';
+
+  const badge = document.getElementById('cartBadge');
+  const toggle = document.getElementById('cartToggle');
+
+  initCart();
+
+  $cart.subscribe((cart) => {
+    const count = cart?.totalQuantity ?? 0;
+    if (badge) {
+      badge.textContent = String(count);
+      badge.style.display = count > 0 ? '' : 'none';
+    }
+    if (toggle) {
+      toggle.setAttribute(
+        'aria-label',
+        count > 0 ? `Open cart, ${count} item${count === 1 ? '' : 's'}` : 'Open cart',
+      );
+    }
+  });
+
+  toggle?.addEventListener('click', () => openCart());
 </script>

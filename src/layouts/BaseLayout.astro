@@ -9,8 +9,8 @@ import { SITE } from '~/config/site';
 import Header from '~/components/layout/Header.astro';
 import MobileNav from '~/components/layout/MobileNav.astro';
 import Footer from '~/components/layout/Footer.astro';
-import CartDrawer from '~/components/react/CartDrawer.tsx';
-import QuickView from '~/components/react/QuickView.tsx';
+import CartDrawer from '~/components/layout/CartDrawer.astro';
+import QuickView from '~/components/product/QuickView.astro';
 
 interface Props {
   title?: string;
@@ -109,9 +109,9 @@ const orgLd = {
 
     {!noFooter && <Footer />}
 
-    {/* Global cart drawer + quick-view modal islands */}
-    <CartDrawer client:load />
-    <QuickView client:load />
+    {/* Global cart drawer + quick-view modal */}
+    <CartDrawer />
+    <QuickView />
 
     <script>
       // Reveal-on-scroll: add `.visible` to `.reveal` elements as they

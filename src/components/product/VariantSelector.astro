@@ -1,0 +1,132 @@
+---
+// ============================================================
+//  VariantSelector — editorial PDP buy box (mirrors Product.html).
+//  Price → description → colour swatches + size pills → stock →
+//  qty + "Add to Bag — $price" + wishlist heart. Server-rendered
+//  first paint, then a vanilla script keeps option + qty + variant
+//  state consistent. No framework.
+// ============================================================
+import type { ProductOption, ProductVariant } from '~/lib/shopify/types';
+import { initialSelection, buyBoxInnerHtml } from '~/lib/variant-selector-render';
+
+interface Props {
+  options: ProductOption[];
+  variants: ProductVariant[];
+  currencyCode: string;
+  handle: string;
+  title: string;
+  image?: string;
+  vendor?: string;
+}
+
+const { options, variants, currencyCode, handle, title, image, vendor } = Astro.props;
+
+const data = { options, variants, currencyCode };
+const selected = initialSelection(variants);
+const initialHtml = buyBoxInnerHtml(data, { selected, quantity: 1, adding: false, wished: false });
+
+// Payload for the client script (options + variants + wishlist meta).
+const payload = { options, variants, currencyCode, handle, title, image: image ?? '', vendor: vendor ?? '' };
+---
+
+<div data-variant-selector set:html={initialHtml}></div>
+<script type="application/json" data-variant-data set:html={JSON.stringify(payload)} />
+
+<script>
+  import { buyBoxInnerHtml, initialSelection, type BuyBoxData } from '~/lib/variant-selector-render';
+  import { addItem } from '~/stores/cart';
+  import { hasWish, toggleWish, WISHLIST_EVENT } from '~/lib/wishlist';
+  import { findVariant } from '~/lib/variant-options';
+  import { formatMoney } from '~/lib/utils';
+
+  interface Payload extends BuyBoxData {
+    handle: string;
+    title: string;
+    image: string;
+    vendor: string;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-variant-selector]');
+  const dataEl = document.querySelector<HTMLElement>('[data-variant-data]');
+  if (root && dataEl) {
+    const payload = JSON.parse(dataEl.textContent || '{}') as Payload;
+    const data: BuyBoxData = {
+      options: payload.options,
+      variants: payload.variants,
+      currencyCode: payload.currencyCode,
+    };
+
+    let selected = initialSelection(payload.variants);
+    let quantity = 1;
+    let adding = false;
+    let wished = hasWish(payload.handle);
+
+    const render = () => {
+      root.innerHTML = buyBoxInnerHtml(data, { selected, quantity, adding, wished });
+    };
+
+    root.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement;
+
+      const opt = target.closest<HTMLElement>('[data-opt]');
+      if (opt) {
+        const name = opt.dataset.opt;
+        const val = opt.dataset.val;
+        if (name && val) {
+          selected = { ...selected, [name]: val };
+          render();
+        }
+        return;
+      }
+
+      if (target.closest('[data-qty-dec]')) {
+        quantity = Math.max(1, quantity - 1);
+        render();
+        return;
+      }
+      if (target.closest('[data-qty-inc]')) {
+        quantity = Math.min(20, quantity + 1);
+        render();
+        return;
+      }
+
+      if (target.closest('[data-add]')) {
+        const variant = findVariant(payload.variants, selected);
+        if (!variant || !variant.availableForSale || adding) return;
+        adding = true;
+        render();
+        await addItem(variant.id, quantity);
+        adding = false;
+        render();
+        return;
+      }
+
+      if (target.closest('[data-wish]')) {
+        const variant = findVariant(payload.variants, selected);
+        const price = variant
+          ? formatMoney(variant.price.amount, payload.currencyCode)
+          : '';
+        wished = toggleWish({
+          handle: payload.handle,
+          title: payload.title,
+          image: payload.image,
+          price,
+          vendor: payload.vendor,
+        });
+        render();
+      }
+    });
+
+    // Keep the heart in sync if the wishlist changes elsewhere.
+    window.addEventListener(WISHLIST_EVENT, () => {
+      const next = hasWish(payload.handle);
+      if (next !== wished) {
+        wished = next;
+        render();
+      }
+    });
+
+    // The server paints the heart inactive; reflect saved state on load.
+    if (wished) render();
+  }
+</script>
