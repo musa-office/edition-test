@@ -1,23 +1,27 @@
 ---
 // ============================================================
 //  MidSeasonSale — promo banner with live countdown + a rail
-//  of products (live Shopify).
+//  of products (live Shopify). Banner copy + image are prop-
+//  driven; defaults in src/config/home.ts (MID_SEASON_SALE).
 // ============================================================
+import { Image } from 'astro:assets';
 import type { ProductCard } from '~/lib/shopify/types';
 import ProductCardComp from '~/components/product/ProductCard.astro';
+import { MID_SEASON_SALE, type MidSeasonSaleContent } from '~/config/home';
 
 interface Props {
   products: ProductCard[];
+  content?: MidSeasonSaleContent;
 }
-const { products } = Astro.props;
+const { products, content = MID_SEASON_SALE } = Astro.props;
 ---
 
 <section class="section sale" id="sale">
   <div class="wrap">
     <div class="sale-top reveal">
       <div class="sale-head">
-        <span class="eyebrow">Mid-Season Sale</span>
-        <h2 class="sale-title">Up to <em>50%</em> Off</h2>
+        <span class="eyebrow">{content.eyebrow}</span>
+        <h2 class="sale-title" set:html={content.titleHtml} />
       </div>
       <div class="countdown" id="countdown" aria-label="Sale ends in">
         <div class="cd-unit"><span class="cd-num" id="cdDays">00</span><span class="cd-lbl">Days</span></div>
@@ -32,11 +36,11 @@ const { products } = Astro.props;
 
     <div class="sale-card reveal d1">
       <div class="sale-img">
-        <span class="sale-flag">SS26 · Final Reductions</span>
-        <img src="/images/section%20sale%20image.png" alt="Mid-season sale campaign" />
+        <span class="sale-flag">{content.flag}</span>
+        <Image src={content.image} alt="Mid-season sale campaign" widths={[420, 800, 1100]} sizes="(max-width: 900px) 100vw, 45vw" />
       </div>
       <div class="sale-panel">
-        <div class="sale-panel-head"><h3>Complete the Edit</h3></div>
+        <div class="sale-panel-head"><h3>{content.panelHeading}</h3></div>
         <div class="sale-rail">
           {products.map((p) => <ProductCardComp product={p} />)}
         </div>

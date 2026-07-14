@@ -7,52 +7,13 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import Testimonials from '~/components/home/Testimonials.astro';
 import { SITE } from '~/config/site';
-
-const VALUES = [
-  { no: '01', title: 'Intentional Craft', tag: 'Design & Making', body: 'Every garment begins with a question: does this need to exist? If yes — we make it slowly, with materials chosen for longevity over trend. Craft is not an aesthetic. It is a commitment.' },
-  { no: '02', title: 'Expressive Restraint', tag: 'Aesthetic Direction', body: 'We say more with less. Our collections are edited ruthlessly — a process that results in pieces that carry weight, presence, and meaning. Restraint is not minimalism. It is confidence.' },
-  { no: '03', title: 'Worn, Not Displayed', tag: 'Human & World', body: 'Fashion exists in motion — on bodies, in streets, in the world. We design for the life you actually live, in silhouettes that move and fabrics that improve with time. Clothing should be used, loved, and kept.' },
-];
-
-const TIMELINE = [
-  { year: '2014', tag: 'Origin', title: 'Founded in East London', body: 'Isabelle Fontaine launches Édition from a Hackney studio with a debut collection of 12 pieces. Sell-out in three weeks.' },
-  { year: '2016', tag: 'Expansion', title: 'First flagship store opens', body: 'Our Mayfair flagship opens its doors, designed as a living editorial space — part retail, part gallery.' },
-  { year: '2018', tag: 'Recognition', title: 'British Fashion Council Award', body: 'Named Emerging Brand of the Year. Vogue UK features Édition in their annual Best British Brands issue.' },
-  { year: '2020', tag: 'Craft', title: 'Paris atelier established', body: 'We open our Paris atelier in Le Marais, enabling hand-finishing on every tailored piece.' },
-  { year: '2022', tag: 'Sustainability', title: 'Certified carbon neutral', body: 'Full supply chain transparency achieved. 100% of fabrics sourced from certified ethical mills in Italy, Portugal, and Japan.' },
-  { year: '2024', tag: 'Present', title: 'A decade of Édition', body: 'Ten years. Six flagship stores. Forty-two seasonal collections. One unwavering belief: fashion is a form of expression.' },
-];
-
-const TEAM = [
-  {
-    img: '/images/Profile%2001.png', num: 'Profile 01 / 03', reverse: false,
-    role: 'Founder & Creative Director', name: 'Isabelle Fontaine', school: 'Central Saint Martins · London, UK',
-    bio: 'Previously head of design at Céline, Isabelle founded Édition in 2014 with a singular conviction — that fashion is a language, not a product. Her collections have been featured in Vogue Paris, i-D, and Harper’s Bazaar. Named BFC Emerging Talent of the Year in 2018.',
-    pull: 'Fashion should feel like something you discovered — not something you were sold.',
-    tags: ['Central Saint Martins', 'Former: Céline', 'BFC Award 2018', 'Founded Édition 2014'],
-  },
-  {
-    img: '/images/Profile%2002.png', num: 'Profile 02 / 03', reverse: true,
-    role: 'Head of Materials & Sustainability', name: 'James Alderton', school: 'Textile Engineering · Joined 2019',
-    bio: 'A textile engineer and supply chain specialist, James has spent 15 years building responsible sourcing programmes across Europe, Portugal, and Japan. At Édition he leads our full materials strategy — from fibre selection to end-of-life care — ensuring every piece is made to last.',
-    pull: 'The most sustainable garment is the one you never want to throw away.',
-    tags: ['Textile Engineering', 'Supply Chain Ethics', 'EU & Japan Mills'],
-  },
-  {
-    img: '/images/Profile%2003.png', num: 'Profile 03 / 03', reverse: false,
-    role: 'Senior Designer — Womenswear', name: 'Nadia Osei', school: 'Royal College of Art · Joined 2021',
-    bio: 'An RCA graduate renowned for her mastery of draped construction, Nadia defines Édition’s womenswear visual language season by season. Her silhouettes — precise yet fluid — are built on a deep understanding of how fabric behaves on a real body in real life.',
-    pull: 'Every collection is a conversation between the archive and the next century.',
-    tags: ['Royal College of Art', 'Drape & Construction', 'Womenswear'],
-  },
-];
-
-const CONNECT = [
-  { label: 'For Customers', title: 'Book a Styling Session', body: 'Our personal stylists offer complimentary 45-minute consultations — in store or virtually. Get curated recommendations for your wardrobe, occasion, or budget.', cta: 'Book Now', href: '/contact', icon: 'heart' },
-  { label: 'For Creatives', title: 'Collaborate with Us', body: 'We work with photographers, stylists, artists, and independent retailers who share our values. If you have a creative project, partnership idea, or stockist enquiry, we’d love to hear it.', cta: 'Start a Conversation', href: '/contact', icon: 'people' },
-  { label: 'For Press & Media', title: 'Press & Media Enquiries', body: 'Journalists, editors, and content creators — download our brand assets, request samples, or speak directly with our press team. We respond to all media enquiries within 24 hours.', cta: 'Contact Press Office', href: '/contact', icon: 'press' },
-  { label: 'For Talent', title: 'Join the Team', body: 'We’re always looking for exceptional people — designers, technologists, stylists, and storytellers. Browse our open roles or send us a speculative application. Every CV is read by a real person.', cta: 'See Open Roles', href: '/contact', icon: 'pen' },
-];
+import {
+  ABOUT_MEDIA,
+  ABOUT_VALUES as VALUES,
+  ABOUT_TIMELINE as TIMELINE,
+  ABOUT_TEAM as TEAM,
+  ABOUT_CONNECT as CONNECT,
+} from '~/config/about';
 ---
 
 <BaseLayout
@@ -63,7 +24,7 @@ const CONNECT = [
   <div class="abt-wrap">
     <!-- 1 · HERO -->
     <section class="abt-hero" aria-label={`About ${SITE.name}`}>
-      <div class="abt-hero-bg" style="background-image:url('/images/About%20hero%20bg%20image.png');" aria-hidden="true"></div>
+      <div class="abt-hero-bg" style={`background-image:url('${ABOUT_MEDIA.heroBg.src}');`} aria-hidden="true"></div>
       <div class="abt-hero-overlay" aria-hidden="true"></div>
       <div class="abt-hero-content reveal">
         <p class="abt-hero-issue">The House of Édition — Est. 2014</p>
@@ -78,7 +39,7 @@ const CONNECT = [
     <section class="abt-story">
       <div class="abt-story-inner">
         <div class="abt-story-img-wrap reveal">
-          <div class="abt-story-img" style="background-image:url('/images/Our%20story%20image.png');"></div>
+          <div class="abt-story-img" style={`background-image:url('${ABOUT_MEDIA.storyImg.src}');`}></div>
           <div class="abt-story-img-year">
             <div class="abt-story-img-year-val">2014</div>
             <div class="abt-story-img-year-lbl">Founded</div>
@@ -169,7 +130,7 @@ const CONNECT = [
             <div class={`abt-team-row reveal ${m.reverse ? 'reverse' : ''}`}>
               <div class="abt-team-img-side">
                 <div class="abt-team-img-frame">
-                  <div class="abt-team-img-bg" style={`background-image:url('${m.img}');`}></div>
+                  <div class="abt-team-img-bg" style={`background-image:url('${m.img.src}');`}></div>
                 </div>
                 <div class="abt-team-issue-num">{m.num}</div>
               </div>

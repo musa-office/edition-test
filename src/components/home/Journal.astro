@@ -4,6 +4,7 @@
 //  driven by live Shopify blog articles with a static fallback.
 // ============================================================
 import type { Article } from '~/lib/shopify/services/content';
+import { JOURNAL_FALLBACK, JOURNAL_FALLBACK_IMAGES } from '~/config/home';
 
 interface Props {
   articles?: Article[];
@@ -15,29 +16,20 @@ const fmtDate = (iso?: string) =>
     ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(iso))
     : '';
 
-const FALLBACK_IMG = [
-  '/images/Blog%20Image%2001.png',
-  '/images/Blog%20Image%2002.png',
-  '/images/Blog%20Image%2003.png',
-  '/images/Blog%20Image%2004.png',
-];
-
-// Map live articles (or fall back to the static editorial set).
+// Map live articles (or fall back to the static editorial set). Live
+// article images are remote Shopify URLs; the fallback images are
+// imported assets, so we read their resolved `.src` to keep one string
+// shape for the <img> below.
 const live = articles.slice(0, 4).map((a, i) => ({
   href: `/journal/${a.handle}`,
-  img: a.image?.url ?? FALLBACK_IMG[i % FALLBACK_IMG.length],
+  img: a.image?.url ?? JOURNAL_FALLBACK_IMAGES[i % JOURNAL_FALLBACK_IMAGES.length].src,
   cat: a.author ?? 'The Journal',
   date: fmtDate(a.publishedAt),
   title: a.title,
   excerpt: a.excerpt ?? '',
 }));
 
-const fallback = [
-  { href: '/journal', img: FALLBACK_IMG[0], cat: 'Style Notes', date: 'May 2, 2026', title: 'The Quiet Power of Dressing in Neutrals', excerpt: 'When the colour palette retreats, the construction speaks — a guide to building a wardrobe that outlasts every trend cycle.' },
-  { href: '/journal', img: FALLBACK_IMG[1], cat: 'Wardrobe Tips', date: 'April 18, 2026', title: "How to Build a Capsule Wardrobe You'll Love for Years", excerpt: "The capsule wardrobe isn't about owning less — it's about owning better." },
-  { href: '/journal', img: FALLBACK_IMG[2], cat: 'Trend Edit', date: 'March 22, 2026', title: 'Spring Trend Edit: The Shapes That Will Define Your Season', excerpt: 'From fluid silhouettes to structured tailoring — the shapes setting the tone for the season.' },
-  { href: '/journal', img: FALLBACK_IMG[3], cat: 'Care Guide', date: 'February 10, 2026', title: 'The Art of Caring for Fine Fabrics at Home', excerpt: 'Cashmere, silk, wool — the pieces worth keeping deserve to be kept properly.' },
-];
+const fallback = JOURNAL_FALLBACK.map((f) => ({ ...f, img: f.img.src }));
 
 const items = live.length ? live : fallback;
 const featured = items[0];

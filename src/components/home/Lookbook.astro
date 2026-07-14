@@ -5,19 +5,17 @@
 //  (e.g. colour + size); selecting across them resolves the
 //  matching variant and adds it straight to the bag.
 // ============================================================
+import { Image } from 'astro:assets';
 import type { Product, ProductVariant } from '~/lib/shopify/types';
 import { formatMoney } from '~/lib/utils';
+import { LOOKBOOK_META, type LookMeta } from '~/config/home';
 
 interface Props {
   products: Product[];
+  /** Look imagery + copy; defaults to the config set. */
+  looks?: LookMeta[];
 }
-const { products } = Astro.props;
-
-const LOOK_META = [
-  { tag: 'SS26 · Look 01', kicker: 'Look 01 — The Edit', title: 'The Movement Edit', desc: 'Three pieces styled as one story — fluid layers built to move from studio to street. Tap a marker to shop the piece.', image: '/images/Look%2001.png', spots: [[34, 30], [57, 53], [46, 80]] },
-  { tag: 'SS26 · Look 02', kicker: 'Look 02 — Off Duty', title: 'Soft Structure', desc: 'Relaxed tailoring and easy knitwear — the considered weekend uniform, finished with one quiet statement.', image: '/images/Look%2002.png', spots: [[40, 28], [30, 60], [62, 70]] },
-  { tag: 'SS26 · Look 03', kicker: 'Look 03 — After Hours', title: 'Quiet Evening', desc: 'Evening dressing without the noise — clean lines, a fluid drape, and a palette that lets the cut speak.', image: '/images/Look%2003.png', spots: [[50, 32], [40, 66], [61, 56]] },
-];
+const { products, looks: lookMeta = LOOKBOOK_META } = Astro.props;
 
 const currency = products[0]?.priceRange.minVariantPrice.currencyCode ?? 'USD';
 const per = 3;
@@ -34,7 +32,7 @@ const defaultVariant = (p: Product): ProductVariant | undefined =>
   p.variants.find((v) => v.availableForSale) ?? p.variants[0];
 
 // Build looks from real products (wraps if the pool is small).
-const looks = LOOK_META.map((meta, li) => {
+const looks = lookMeta.map((meta, li) => {
   const items = meta.spots.map((spot, si) => {
     const p = products.length ? products[(li * per + si) % products.length] : null;
     if (!p) return { x: spot[0], y: spot[1], product: null, variant: undefined, options: [], selected: {}, variantsJson: '[]', price: 0 };
@@ -98,7 +96,7 @@ const hasProducts = products.length > 0;
           <div class="look-grid look-view" data-look-view={li} style={li === 0 ? '' : 'display:none;'}>
             <figure class="look-stage">
               <span class="look-tag">{look.tag}</span>
-              <img src={look.image} alt={`Shop the look — ${look.title}`} loading="lazy" />
+              <Image src={look.image} alt={`Shop the look — ${look.title}`} widths={[480, 900, 1400]} sizes="(max-width: 900px) 100vw, 55vw" loading="lazy" />
               {look.items.map((it, si) =>
                 it.product ? (
                   <a

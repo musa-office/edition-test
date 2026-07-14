@@ -1,13 +1,21 @@
 ---
 // ============================================================
 //  Campaign — full-bleed cinematic video + kinetic marquee.
+//  Copy/media are prop-driven; defaults in src/config/home.ts
+//  (CAMPAIGN).
 // ============================================================
-const marquee = ['The Movement Issue', 'SS / 2026', 'Shot in Lisbon', 'In Full Motion', 'Editorial N°08', 'Shop the Campaign'];
+import { CAMPAIGN, type CampaignContent } from '~/config/home';
+
+interface Props {
+  content?: CampaignContent;
+}
+const { content = CAMPAIGN } = Astro.props;
+const { marquee } = content;
 ---
 
 <section class="campaign" id="campaign">
   <div class="camp-hero">
-    <video class="camp-bg" id="campVideo" src="/videos/camp-bg%20video.mp4" autoplay muted loop playsinline></video>
+    <video class="camp-bg" id="campVideo" src={content.video} autoplay muted loop playsinline></video>
     <div class="camp-grad"></div>
     <button class="camp-play" id="campSound" aria-label="Unmute campaign video" aria-pressed="false">
       <span id="campSoundIco">
@@ -17,19 +25,19 @@ const marquee = ['The Movement Issue', 'SS / 2026', 'Shot in Lisbon', 'In Full M
       </span>
     </button>
     <div class="camp-inner">
-      <div class="camp-top"><span class="eyebrow">SS26 Campaign</span></div>
+      <div class="camp-top"><span class="eyebrow">{content.eyebrow}</span></div>
       <div class="camp-bottom">
         <div class="camp-bottom-text">
-          <span class="camp-kicker">Mid-Season Sale · Ends Sunday</span>
-          <h2 class="camp-h">Up to<br><em>50%</em> Off</h2>
-          <p class="camp-sub">The <b>SS26 collection</b>, reduced for a limited time — shot on location across Lisbon.</p>
-          <span class="camp-code">Use code <b>SS26</b> at checkout</span>
+          <span class="camp-kicker">{content.kicker}</span>
+          <h2 class="camp-h" set:html={content.headingHtml} />
+          <p class="camp-sub" set:html={content.subHtml} />
+          <span class="camp-code">Use code <b>{content.code}</b> at checkout</span>
         </div>
         <div class="camp-cta">
-          <a class="camp-shop" href="/products?sort=newest">Shop the Sale
+          <a class="camp-shop" href={content.ctaHref}>{content.ctaLabel}
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
           </a>
-          <span class="camp-cta-note">Free shipping over $250</span>
+          <span class="camp-cta-note">{content.ctaNote}</span>
         </div>
       </div>
     </div>

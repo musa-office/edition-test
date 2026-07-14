@@ -7,6 +7,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 import { getArticles } from '~/lib/shopify';
 import { SITE } from '~/config/site';
 import { paginationUrls } from '~/lib/pagination';
+import { JOURNAL_FALLBACK_IMAGES } from '~/config/home';
 import type { Article } from '~/lib/shopify/services/content';
 
 const url = Astro.url;
@@ -76,7 +77,7 @@ const rest = featured ? articles.slice(1) : articles;
             {featured && (
               <a class="jx-feat reveal" href={`/journal/${featured.handle}`}>
                 <div class="jx-feat-img">
-                  <img src={featured.image?.url ?? '/images/Blog%20Image%2001.png'} alt={featured.title} loading="eager" />
+                  <img src={featured.image?.url ?? JOURNAL_FALLBACK_IMAGES[0].src} alt={featured.title} loading="eager" />
                   <span class="jx-feat-badge">Featured</span>
                 </div>
                 <div class="jx-feat-body">
@@ -102,10 +103,10 @@ const rest = featured ? articles.slice(1) : articles;
             )}
 
             <div class="journal-list reveal d1">
-              {rest.map((a) => (
+              {rest.map((a, i) => (
                 <a class="journal-card" href={`/journal/${a.handle}`}>
                   <div class="journal-card-img">
-                    <img src={a.image?.url ?? '/images/Blog%20Image%2002.png'} alt={a.title} loading="lazy" />
+                    <img src={a.image?.url ?? JOURNAL_FALLBACK_IMAGES[i % JOURNAL_FALLBACK_IMAGES.length].src} alt={a.title} loading="lazy" />
                   </div>
                   <div class="journal-card-meta">
                     {a.author && <><span>{a.author}</span><span class="sep">·</span></>}
